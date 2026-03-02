@@ -1,8 +1,8 @@
 {
   "skill_space_path": null,
-  "skills": ["skills/ace-build", "skills/ace-shaping"],
+  "skills": ["skills/ace-build", "skills/ace-shaping","skills/ace-context-to-memory"],
   "skills_config": {
-    "order": ["skills/ace-build", "skills/ace-shaping"]
+    "order": ["skills/ace-build", "skills/ace-shaping","skills/ace-context-to-memory"]
   },
   "constraints": []
 }
