@@ -98,10 +98,10 @@ class AgileContextEngine:
         if not self.workspace_path:
             self.strategy_path = None
             return
-        # Default: <workspace>/ace-output/ace-shaping/story/shaping-strategy.md
+        # Default: <workspace>/ace-output/ace-shaping/story/strategy.md
         candidates = [
-            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "shaping-strategy.md",
-            self.workspace_path / "docs" / "shaping-strategy.md",
+            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "strategy.md",
+            self.workspace_path / "docs" / "strategy.md",
         ]
         for p in candidates:
             if p.exists():
@@ -111,13 +111,13 @@ class AgileContextEngine:
         self.strategy_path = candidates[0]
 
 
-# Content files in order for assembly
+# Content files in order for assembly (skill-agnostic names)
 CONTENT_ORDER = [
-    "shaping-core.md",
-    "shaping-process.md",
-    "shaping-strategy.md",
-    "shaping-output.md",
-    "shaping-validation.md",
+    "core.md",
+    "process.md",
+    "strategy.md",
+    "output.md",
+    "validation.md",
 ]
 
 # Optional content for skills with scripts
@@ -134,11 +134,11 @@ def get_skill_scaffold_spec() -> dict[str, Any]:
         "dirs": ["content", "rules", "scripts"],
         "root_files": ["SKILL.md", "README.md", "skill-config.json"],
         "content_templates": {
-            "shaping-core.md": "# Core Definitions\n\n",
-            "shaping-process.md": "# Shaping Process\n\n",
-            "shaping-strategy.md": "# Shaping Strategy\n\n",
-            "shaping-output.md": "# Output Structure\n\n",
-            "shaping-validation.md": "# Validation\n\n",
+            "core.md": "# Core Definitions\n\n",
+            "process.md": "# Process\n\n",
+            "strategy.md": "# Strategy\n\n",
+            "output.md": "# Output Structure\n\n",
+            "validation.md": "# Validation\n\n",
             "script-invocation.md": "# Script Invocation\n\nHow to call scripts (params, when, what to expect).\n",
         },
         "rules_default": {"scanners": []},
@@ -218,7 +218,7 @@ def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None =
 def build_skill(skill_path: str | Path, engine_root: str | Path | None = None) -> Path:
     """
     Assembles content/*.md into AGENTS.md per engine conventions.
-    Order: shaping-core, shaping-process, shaping-strategy, shaping-output, shaping-validation.
+    Order: core, process, strategy, output, validation.
     """
     skill_path = Path(skill_path)
     if not skill_path.is_absolute() and engine_root:

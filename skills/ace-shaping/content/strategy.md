@@ -1,12 +1,10 @@
-# Shaping Strategy
+# Strategy Phase
 
 <!-- section: shaping.strategy.phase -->
-## Strategy Phase
-
 1. **Analyze the source** to determine where complexity lives.
 2. **Present the strategy** to the user. Include: complexity areas identified, proposed Epic/Story breakdown, assumptions, break down strategy, **proposed traversal order (slices)**.
 3. **Validate until reasonable** — User reviews; refine until approved. Do not produce an interaction tree until then.
-4. **Save the strategy** to `<skill-space>/docs/shaping-strategy.md`.
+4. **Save the strategy** to `<skill-space>/docs/strategy.md`.
 
 <!-- section: shaping.strategy.criteria -->
 ## Strategy Criteria
@@ -24,7 +22,7 @@
 
 State your splitting criteria and reasoning so the user can adjust.
 
-### 2 - Shaping Depth
+### 2 - Depth
 
 When shaping, choose the **depth** of what you produce:
 - **Interactions only** — Capture only the interactions themselves, without actors.

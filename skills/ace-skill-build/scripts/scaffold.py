@@ -10,7 +10,7 @@ from pathlib import Path
 # Add engine to path
 _script_dir = Path(__file__).resolve().parent
 _ace_build_dir = _script_dir.parent
-_engine_root = _ace_build_dir.parent.parent  # skills/ace-build -> skills -> repo root
+_engine_root = _ace_build_dir.parent.parent  # skills/ace-skill-build -> skills -> repo root
 if str(_engine_root) not in sys.path:
     sys.path.insert(0, str(_engine_root))
 

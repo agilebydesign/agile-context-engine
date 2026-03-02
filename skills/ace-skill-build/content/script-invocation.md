@@ -1,6 +1,6 @@
 # Script Invocation
 
-AI guidance for calling ace-build scripts. Run from `agile-context-engine` root.
+AI guidance for calling ace-skill-build scripts. Run from `agile-context-engine` root.
 
 ## scaffold.py
 
@@ -10,7 +10,7 @@ Creates a new ace-skill directory with content/, rules/, scripts/.
 
 **Usage:**
 ```bash
-python skills/ace-build/scripts/scaffold.py --name ace-<name> [--path skills/ace-<name>]
+python skills/ace-skill-build/scripts/scaffold.py --name ace-<name> [--path skills/ace-<name>]
 ```
 
 **Parameters:**
@@ -19,7 +19,7 @@ python skills/ace-build/scripts/scaffold.py --name ace-<name> [--path skills/ace
 
 **Example:**
 ```bash
-python skills/ace-build/scripts/scaffold.py --name ace-foo
+python skills/ace-skill-build/scripts/scaffold.py --name ace-foo
 ```
 
 **Output:** Creates `skills/ace-foo/` with content/, rules/, scripts/, and standard files.
@@ -32,9 +32,9 @@ Assembles content/*.md into AGENTS.md.
 
 **When to call:** After content pieces are filled (or when regenerating AGENTS.md).
 
-**Usage (from ace-build itself):**
+**Usage (from ace-skill-build itself):**
 ```bash
-cd skills/ace-build
+cd skills/ace-skill-build
 python scripts/build.py
 ```
 
@@ -44,6 +44,6 @@ cd skills/ace-<name>
 python scripts/build.py
 ```
 
-**Output:** Writes `AGENTS.md` with merged content in order: core-definitions, intro, output-structure, shaping-process, validation.
+**Output:** Writes `AGENTS.md` with merged content in order: core, process, strategy, output, validation.
 
 **Sequencing:** Run scaffold first → fill content → run build when complete.

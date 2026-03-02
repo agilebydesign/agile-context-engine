@@ -7,4 +7,4 @@ After build, the skill contains:
 - **SKILL.md** — Skill descriptor
 - **README.md** — Usage instructions
 
-Content merge order: core-definitions → intro → output-structure → shaping-process → validation.
+Content merge order: core → process → strategy → output → validation.

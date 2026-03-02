@@ -40,11 +40,9 @@ A domain concept that holds state and can be operated on. It is defined in the S
 
 ---
 
-# Shaping Process
+# Process Overview
 
 <!-- section: shaping.process.intro -->
-## Process Overview
-
 Your task is to **shape** source material into an **Interaction Tree** and **State Model** — a hierarchical structure of meaningful exchanges between actors, plus the domain concepts and state that support them. In Agile terminology, this translates to a **story map** and **domain model**. The hierarchy goes from larger, coarser-grain business outcomes (*Epics*) down to **Stories** — tangible user and system interactions. Shaping means we do not go deeper than the story level; details are flushed out later.
 
 Each rule has a DO with example and a DO NOT with example.
@@ -61,8 +59,8 @@ When the user says "create the story map," "proceed," "build it," "generate the 
 
 ### Output Paths (default)
 
-- **Strategy:** `<skill-space>/docs/shaping-strategy.md`
-- **Output:** `<skill-space>/docs/shaping-output.md`
+- **Strategy:** `<skill-space>/docs/strategy.md`
+- **Output:** `<skill-space>/docs/output.md`
 
 These paths can be configured under the skill-space config (`ace-config.json` or equivalent) so the user can choose where files go and what they are named.
 
@@ -70,13 +68,13 @@ These paths can be configured under the skill-space config (`ace-config.json` or
 
 **STOP.** Before producing any Interaction Tree or State Model, you MUST:
 
-1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/docs/shaping-strategy.md`)
+1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/docs/strategy.md`)
 2. [ ] Get user approval of the strategy
 3. [ ] Run Slice 1 only (4–7 stories) and get approval before continuing
 
 ## Process Checklist
 
-- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/docs/shaping-strategy.md`
+- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/docs/strategy.md`
 - [ ] **Strategy approved by user** — Do not produce an interaction tree until then
 - [ ] **Slice 1 produced** — 4–7 stories for the first slice
 - [ ] **Slice 1 approved** — User reviews; corrections → add DO/DO NOT to strategy (with wrong/correct examples); re-run until approved
@@ -90,15 +88,13 @@ Once all slices are done, have the AI review all corrections in the strategy and
 
 ---
 
-# Shaping Strategy
+# Strategy Phase
 
 <!-- section: shaping.strategy.phase -->
-## Strategy Phase
-
 1. **Analyze the source** to determine where complexity lives.
 2. **Present the strategy** to the user. Include: complexity areas identified, proposed Epic/Story breakdown, assumptions, break down strategy, **proposed traversal order (slices)**.
 3. **Validate until reasonable** — User reviews; refine until approved. Do not produce an interaction tree until then.
-4. **Save the strategy** to `<skill-space>/docs/shaping-strategy.md`.
+4. **Save the strategy** to `<skill-space>/docs/strategy.md`.
 
 <!-- section: shaping.strategy.criteria -->
 ## Strategy Criteria
@@ -116,7 +112,7 @@ Once all slices are done, have the AI review all corrections in the strategy and
 
 State your splitting criteria and reasoning so the user can adjust.
 
-### 2 - Shaping Depth
+### 2 - Depth
 
 When shaping, choose the **depth** of what you produce:
 - **Interactions only** — Capture only the interactions themselves, without actors.
@@ -168,11 +164,18 @@ Re-run the slice until the user approves.
 
 When analyzing **existing content**, review and follow the strategy.
 
+### Object Model Correction
+
+**DO** — Inject the Engine (or context provider) into components that need it. Use properties over getters. Encapsulate over passing parameters — components pull context from injected dependencies instead of receiving it as method arguments.
+
+- **Example (wrong):** `AceSkill.get_instructions_for(operation, context)` — context passed as parameter.
+- **Example (correct):** AceSkill has `Engine engine` (injected); `instructions` property; assembles using `engine.workspace`, `engine.strategy_path` when needed.
+
 ---
 
 # Required Output Structure
 
-**Output path (default):** `<skill-space>/docs/shaping-output.md` — write the Interaction Tree and State Model here. Configurable via skill-space config.
+**Output path (default):** `<skill-space>/docs/output.md` — write the Interaction Tree and State Model here. Configurable via skill-space config.
 
 **Workflow:** Start with interactions. Derive concepts from the interactions. Model the concepts in OOAD style (State Model). Add inline Concepts blocks under Epics with compact definitions (properties, operations). Complete this full workflow for each slice.
 
@@ -189,6 +192,8 @@ Epic (coarse interaction)
             └─ Scenario (optional grouping of steps)
                  └─ Step (atomic interaction to be done at a later state)
 ```
+
+**Node names:** Use bold for Epic and Story node names (e.g. `- Epic: **Create Ace-Skill**`, `- Story: **Create scaffolding via script**`).
 
 **Interaction format (used at every level):**
 
@@ -284,6 +289,6 @@ cd skills/ace-shaping
 python scripts/build.py
 ```
 
-**Output:** Writes `AGENTS.md` with merged content in order: shaping-core, shaping-process, shaping-strategy, shaping-output, shaping-validation.
+**Output:** Writes `AGENTS.md` with merged content in order: core, process, strategy, output, validation.
 
 ---
