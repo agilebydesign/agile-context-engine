@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-"""
-CLI entry point for ace-shaping instructions.
-Usage: python scripts/instructions.py <operation> [--workspace PATH]
-Operations: create_strategy, generate_slice, improve_strategy
-Prints assembled markdown for injection into AI prompt.
-"""
+"""CLI entry point for ace-shaping instructions."""
 import argparse
 import sys
 from pathlib import Path
 
-# Add repo root to path
 _repo_root = Path(__file__).resolve().parent.parent
-if str(_repo_root) not in sys.path:
-    sys.path.insert(0, str(_repo_root))
+_shaping_scripts = _repo_root / "skills" / "ace-shaping" / "scripts"
+if not _shaping_scripts.exists() or not (_shaping_scripts / "engine.py").exists():
+    print("ERROR: ace-shaping not found.", file=sys.stderr)
+    sys.exit(1)
+if str(_shaping_scripts) not in sys.path:
+    sys.path.insert(0, str(_shaping_scripts))
 
-from src.engine import AgileContextEngine
+from engine import AgileContextEngine
 
 
 def main() -> int:
@@ -32,7 +30,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    engine = AgileContextEngine()
+    engine = AgileContextEngine(engine_root=_repo_root)
     engine.load()
 
     if args.workspace:

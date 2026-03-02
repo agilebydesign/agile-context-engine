@@ -10,6 +10,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["pydantic>=2.0"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+# Engine lives in skills/ace-shaping/scripts/ — no pip-installable package
+[tool.setuptools.packages]
+find = { "where": ["."], "include": ["_nonexistent*"] }

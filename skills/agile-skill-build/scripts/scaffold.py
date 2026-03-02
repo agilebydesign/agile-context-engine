@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-"""
-Scaffold a new ace-skill. Thin entry point — delegates to engine.
-Usage: python scripts/scaffold.py --name ace-foo [--path skills/ace-foo]
-"""
+"""Scaffold a new ace-skill. Thin entry point — delegates to engine."""
 import argparse
 import sys
 from pathlib import Path
 
-# Add engine to path
-_script_dir = Path(__file__).resolve().parent
-_ace_build_dir = _script_dir.parent
-_engine_root = _ace_build_dir.parent.parent  # skills/agile-skill-build -> skills -> repo root
-if str(_engine_root) not in sys.path:
-    sys.path.insert(0, str(_engine_root))
+_skill_dir = Path(__file__).resolve().parent.parent
+_shaping_scripts = _skill_dir.parent / "ace-shaping" / "scripts"
+if not _shaping_scripts.exists() or not (_shaping_scripts / "engine.py").exists():
+    print("ERROR: ace-shaping not found. Install ace-shaping first.")
+    sys.exit(1)
+if str(_shaping_scripts) not in sys.path:
+    sys.path.insert(0, str(_shaping_scripts))
 
-from src.engine import scaffold_skill
+from engine import scaffold_skill
 
 
 def main() -> int:
@@ -28,7 +26,8 @@ def main() -> int:
     args = parser.parse_args()
 
     path = args.path or f"skills/{args.name}"
-    result = scaffold_skill(args.name, path, engine_root=_engine_root)
+    engine_root = _skill_dir.parent.parent  # repo root for relative paths
+    result = scaffold_skill(args.name, path, engine_root=engine_root)
     print(f"Scaffolded {args.name} at {result}")
     return 0
 

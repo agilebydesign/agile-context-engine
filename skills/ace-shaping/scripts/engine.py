@@ -1,18 +1,16 @@
 """
 Agile Context Engine — defines skill structure, scaffold, and build.
-Engine for building and running skills in their entirety.
-All structural logic lives here. Skill scripts are thin entry points.
 """
 import json
 from pathlib import Path
 from typing import Any
 
-from .config import AceConfig
-from .ace_skill import AceSkill
+from config import AceConfig
+from ace_skill import AceSkill
 
 
 def _default_engine_root() -> Path:
-    """Resolve engine root (parent of src/)."""
+    """Resolve engine root (parent of scripts/)."""
     return Path(__file__).resolve().parent.parent
 
 
@@ -36,6 +34,11 @@ class AgileContextEngine:
         if config.skill_space_path:
             self.workspace_path = Path(config.skill_space_path).resolve()
             self._update_strategy_path()
+        base = self.workspace_path or self.engine_root
+        self.context_paths = [
+            (base / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
+            for p in (config.context_paths or [])
+        ]
         order = (config.skills_config or {}).get("order", config.skills)
         self.skills = []
         for rel_path in order:
@@ -64,54 +67,49 @@ class AgileContextEngine:
         return None
 
     def get_skill_scaffold_spec(self) -> dict[str, Any]:
-        """Returns canonical ace-skill structure."""
         return get_skill_scaffold_spec()
 
     def scaffold_skill(self, name: str, path: str | Path) -> Path:
-        """Creates ace-skill directory with content/, rules/, scripts/."""
         return scaffold_skill(name, path, engine_root=self.engine_root)
 
     def build_skill(self, skill_path: str | Path) -> Path:
-        """Assembles content into AGENTS.md."""
         return build_skill(skill_path, engine_root=self.engine_root)
 
     def _persist_config(self) -> None:
-        """Write skill_space_path to config."""
         data = json.loads(self.config_path.read_text(encoding="utf-8"))
         data["skill_space_path"] = str(self.workspace_path)
         self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     def _create_output_dirs(self) -> None:
-        """Create <workspace>/ace-output/<skill-name>/ for each registered skill."""
         if not self.workspace_path:
             return
-        output_root = self.workspace_path / "ace-output"
-        output_root.mkdir(parents=True, exist_ok=True)
         for skill in self.skills:
             skill_name = skill.path.name
-            (output_root / skill_name).mkdir(parents=True, exist_ok=True)
-            (output_root / skill_name / "story").mkdir(parents=True, exist_ok=True)
-            (output_root / skill_name / "slice-1").mkdir(parents=True, exist_ok=True)
+            if skill_name == "ace-shaping":
+                output_root = self.workspace_path / "shaping"
+                output_root.mkdir(parents=True, exist_ok=True)
+                (output_root / "slice-1").mkdir(parents=True, exist_ok=True)
+            else:
+                output_root = self.workspace_path / "ace-output" / skill_name
+                output_root.mkdir(parents=True, exist_ok=True)
+                (output_root / "slice-1").mkdir(parents=True, exist_ok=True)
 
     def _update_strategy_path(self) -> None:
-        """Set strategy_path from workspace when ace-shaping output exists."""
         if not self.workspace_path:
             self.strategy_path = None
             return
-        # Default: <workspace>/ace-output/ace-shaping/story/strategy.md
         candidates = [
-            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "strategy.md",
+            self.workspace_path / "shaping" / "strategy.md",
             self.workspace_path / "docs" / "strategy.md",
+            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "strategy.md",  # legacy
         ]
         for p in candidates:
             if p.exists():
                 self.strategy_path = p
                 return
-        # Even if not exists, caller may create it — point to default location
         self.strategy_path = candidates[0]
 
 
-# Content files in order for assembly (skill-agnostic names)
 CONTENT_ORDER = [
     "core.md",
     "process.md",
@@ -119,16 +117,10 @@ CONTENT_ORDER = [
     "output.md",
     "validation.md",
 ]
-
-# Optional content for skills with scripts
 SCRIPT_INVOCATION = "script-invocation.md"
 
 
 def get_skill_scaffold_spec() -> dict[str, Any]:
-    """
-    Returns the canonical ace-skill structure. Engine is single source of truth.
-    No file — in-memory spec.
-    """
     return {
         "content_files": CONTENT_ORDER + [SCRIPT_INVOCATION],
         "dirs": ["content", "rules", "scripts"],
@@ -146,10 +138,6 @@ def get_skill_scaffold_spec() -> dict[str, Any]:
 
 
 def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None = None) -> Path:
-    """
-    Creates an ace-skill directory with content/, rules/, scripts/, and standard files.
-    Engine does the actual file/dir creation.
-    """
     path = Path(path)
     if not path.is_absolute() and engine_root:
         path = Path(engine_root) / path
@@ -157,11 +145,9 @@ def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None =
 
     spec = get_skill_scaffold_spec()
 
-    # Create dirs
     for d in spec["dirs"]:
         (path / d).mkdir(parents=True, exist_ok=True)
 
-    # Create content files
     for fname in spec["content_files"]:
         content_path = path / "content" / fname
         content_path.parent.mkdir(parents=True, exist_ok=True)
@@ -169,57 +155,35 @@ def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None =
         if not content_path.exists():
             content_path.write_text(template, encoding="utf-8")
 
-    # Create rules/scanners.json
     rules_dir = path / "rules"
     rules_dir.mkdir(parents=True, exist_ok=True)
     scanners_path = rules_dir / "scanners.json"
     if not scanners_path.exists():
-        import json
-        scanners_path.write_text(
-            json.dumps(spec["rules_default"], indent=2),
-            encoding="utf-8",
-        )
+        scanners_path.write_text(json.dumps(spec["rules_default"], indent=2), encoding="utf-8")
 
-    # Create scripts/build.py
     scripts_dir = path / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
     build_script = scripts_dir / "build.py"
     if not build_script.exists():
         build_script.write_text(_BUILD_SCRIPT_TEMPLATE.format(skill_name=name), encoding="utf-8")
 
-    # Create SKILL.md
     skill_md = path / "SKILL.md"
     if not skill_md.exists():
-        skill_md.write_text(
-            f"# {name}\n\nAce-skill. Fill content pieces and run build.\n",
-            encoding="utf-8",
-        )
+        skill_md.write_text(f"# {name}\n\nAce-skill. Fill content pieces and run build.\n", encoding="utf-8")
 
-    # Create README.md
     readme = path / "README.md"
     if not readme.exists():
-        readme.write_text(
-            f"# {name}\n\nRun `python scripts/build.py` to assemble AGENTS.md.\n",
-            encoding="utf-8",
-        )
+        readme.write_text(f"# {name}\n\nRun `python scripts/build.py` to assemble AGENTS.md.\n", encoding="utf-8")
 
-    # Create skill-config.json
     skill_config = path / "skill-config.json"
     if not skill_config.exists():
-        import json
-        skill_config.write_text(
-            json.dumps({"name": name, "version": "0.1.0"}, indent=2),
-            encoding="utf-8",
-        )
+        skill_config.write_text(json.dumps({"name": name, "version": "0.1.0"}, indent=2), encoding="utf-8")
 
     return path
 
 
 def build_skill(skill_path: str | Path, engine_root: str | Path | None = None) -> Path:
-    """
-    Assembles content/*.md into AGENTS.md per engine conventions.
-    Order: core, process, strategy, output, validation.
-    """
+    """Assembles content/*.md into AGENTS.md per engine conventions."""
     skill_path = Path(skill_path)
     if not skill_path.is_absolute() and engine_root:
         skill_path = Path(engine_root) / skill_path
@@ -235,7 +199,6 @@ def build_skill(skill_path: str | Path, engine_root: str | Path | None = None) -
             parts.append(p.read_text(encoding="utf-8").strip())
             parts.append("\n\n---\n\n")
 
-    # Optional: script-invocation at end
     script_inv = content_dir / SCRIPT_INVOCATION
     if script_inv.exists():
         parts.append(script_inv.read_text(encoding="utf-8").strip())
@@ -250,15 +213,24 @@ _BUILD_SCRIPT_TEMPLATE = '''#!/usr/bin/env python3
 import sys
 from pathlib import Path
 
-# Add engine to path when run from skill dir
 _skill_dir = Path(__file__).resolve().parent.parent
-_engine_root = _skill_dir.parent.parent  # skills/ace-<name> -> skills -> repo root
-if str(_engine_root) not in sys.path:
-    sys.path.insert(0, str(_engine_root))
+_scripts_dir = Path(__file__).resolve().parent
+# Engine lives in ace-shaping/scripts/ — this skill has it, others use sibling
+if _skill_dir.name == "ace-shaping":
+    _engine_dir = str(_scripts_dir)
+else:
+    _shaping_scripts = _skill_dir.parent / "ace-shaping" / "scripts"
+    if not _shaping_scripts.exists() or not (_shaping_scripts / "engine.py").exists():
+        print("ERROR: ace-shaping not found. Install ace-shaping first:")
+        print("  npx skills add agilebydesign/agile-context-engine --skill ace-shaping --skill <this-skill>")
+        sys.exit(1)
+    _engine_dir = str(_shaping_scripts)
+if _engine_dir not in sys.path:
+    sys.path.insert(0, _engine_dir)
 
-from src.engine import build_skill
+from engine import build_skill
 
 if __name__ == "__main__":
-    out = build_skill(_skill_dir, engine_root=_engine_root)
+    out = build_skill(_skill_dir, engine_root=_skill_dir)
     print(f"Wrote {{out}}")
 '''

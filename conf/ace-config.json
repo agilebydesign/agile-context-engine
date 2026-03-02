@@ -1,8 +1,19 @@
 {
-  "skill_space_path": "C:/dev/mutants-and-masterminds",
-  "skills": ["skills/agile-skill-build", "skills/ace-shaping", "skills/ace-context-to-memory"],
+  "skill_space_path": "C:\\dev\\mutants-and-masterminds",
+  "context_paths": [
+    "memory/HeroesHandbook/chunked"
+  ],
+  "skills": [
+    "skills/agile-skill-build",
+    "skills/ace-shaping",
+    "skills/ace-context-to-memory"
+  ],
   "skills_config": {
-    "order": ["skills/agile-skill-build", "skills/ace-shaping", "skills/ace-context-to-memory"]
+    "order": [
+      "skills/agile-skill-build",
+      "skills/ace-shaping",
+      "skills/ace-context-to-memory"
+    ]
   },
   "constraints": []
 }

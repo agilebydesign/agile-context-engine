@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-"""
-Build AGENTS.md for ace-build (this skill). Thin entry point — delegates to engine.
-Usage: python scripts/build.py
-"""
+"""Build AGENTS.md for ace-build. Thin entry point — delegates to engine."""
 import sys
 from pathlib import Path
 
-# Add engine to path
-_script_dir = Path(__file__).resolve().parent
-_skill_dir = _script_dir.parent  # skills/ace-build
-_engine_root = _skill_dir.parent.parent  # skills -> repo root
-if str(_engine_root) not in sys.path:
-    sys.path.insert(0, str(_engine_root))
+_skill_dir = Path(__file__).resolve().parent.parent
+_shaping_scripts = _skill_dir.parent / "ace-shaping" / "scripts"
+if not _shaping_scripts.exists() or not (_shaping_scripts / "engine.py").exists():
+    print("ERROR: ace-shaping not found. Install ace-shaping first.")
+    sys.exit(1)
+if str(_shaping_scripts) not in sys.path:
+    sys.path.insert(0, str(_shaping_scripts))
 
-from src.engine import build_skill
+from engine import build_skill
 
 if __name__ == "__main__":
-    out = build_skill(_skill_dir, engine_root=_engine_root)
+    out = build_skill(_skill_dir, engine_root=_skill_dir)
     print(f"Wrote {out}")

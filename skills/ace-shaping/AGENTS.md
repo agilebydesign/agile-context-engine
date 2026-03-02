@@ -59,8 +59,8 @@ When the user says "create the story map," "proceed," "build it," "generate the 
 
 ### Output Paths (default)
 
-- **Strategy:** `<skill-space>/docs/strategy.md`
-- **Output:** `<skill-space>/docs/output.md`
+- **Strategy:** `<skill-space>/shaping/strategy.md`
+- **Output:** `<skill-space>/shaping/slice-N/` (per slice)
 
 These paths can be configured under the skill-space config (`ace-config.json` or equivalent) so the user can choose where files go and what they are named.
 
@@ -68,13 +68,13 @@ These paths can be configured under the skill-space config (`ace-config.json` or
 
 **STOP.** Before producing any Interaction Tree or State Model, you MUST:
 
-1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/docs/strategy.md`)
+1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/shaping/strategy.md`)
 2. [ ] Get user approval of the strategy
 3. [ ] Run Slice 1 only (4–7 stories) and get approval before continuing
 
 ## Process Checklist
 
-- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/docs/strategy.md`
+- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/shaping/strategy.md`
 - [ ] **Strategy approved by user** — Do not produce an interaction tree until then
 - [ ] **Slice 1 produced** — 4–7 stories for the first slice
 - [ ] **Slice 1 approved** — User reviews; corrections → add DO/DO NOT to strategy (with wrong/correct examples); re-run until approved
@@ -94,7 +94,7 @@ Once all slices are done, have the AI review all corrections in the strategy and
 1. **Analyze the source** to determine where complexity lives.
 2. **Present the strategy** to the user. Include: complexity areas identified, proposed Epic/Story breakdown, assumptions, break down strategy, **proposed traversal order (slices)**.
 3. **Validate until reasonable** — User reviews; refine until approved. Do not produce an interaction tree until then.
-4. **Save the strategy** to `<skill-space>/docs/strategy.md`.
+4. **Save the strategy** to `<skill-space>/shaping/strategy.md`.
 
 <!-- section: shaping.strategy.criteria -->
 ## Strategy Criteria
@@ -175,7 +175,7 @@ When analyzing **existing content**, review and follow the strategy.
 
 # Required Output Structure
 
-**Output path (default):** `<skill-space>/docs/output.md` — write the Interaction Tree and State Model here. Configurable via skill-space config.
+**Output path (default):** `<skill-space>/shaping/` — write the Interaction Tree and State Model in `shaping/slice-N/` per slice. Configurable via skill-space config.
 
 **Workflow:** Start with interactions. Derive concepts from the interactions. Model the concepts in OOAD style (State Model). Add inline Concepts blocks under Epics with compact definitions (properties, operations). Complete this full workflow for each slice.
 

@@ -430,17 +430,17 @@ Everything below is placeholder. We will go into more detail on Create Ace-Skill
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Output path** | `<skill_space>/ace-output/ace-shaping/story/<name>-shaping-strategy.md` |
+| **Output path** | `<skill_space>/shaping/strategy.md` |
 | **Format** | Markdown. Structure: source analysis, epic breakdown, slice order, assumptions. |
 | **Strategy** | `src/strategy.py` — `class Strategy` with `save(path)`, `load(path)`, `update(rules)`. |
-| **Metadata (optional)** | `<skill_space>/ace-output/ace-shaping/story/<name>-shaping-strategy.json` for structured parts (epics, slices) if needed. |
+| **Metadata (optional)** | `<skill_space>/shaping/strategy.json` for structured parts (epics, slices) if needed. |
 
 ### Story: Generate Shaping Slices
 
 | Aspect | Implementation |
 |--------|----------------|
 | **Output** | Interaction Tree + State Model. |
-| **Paths** | `<skill_space>/ace-output/ace-shaping/slice-<n>/interaction-tree.md`, `slice-<n>/state-model.md` (or `.json` for structured). |
+| **Paths** | `<skill_space>/shaping/slice-<n>/interaction-tree.md`, `slice-<n>/state-model.md` (or `.json` for structured). |
 | **Slice** | `src/slice.py` — `class Slice` with `produce(strategy): (InteractionTree, StateModel)`. |
 
 ### Story: Improve Shaping Skill
@@ -464,12 +464,12 @@ Everything below is placeholder. We will go into more detail on Create Ace-Skill
 │   │       │   └── ...
 │   │       └── <artifact_id_2>/
 │   │           └── ...
-│   └── ace-shaping/
-│       ├── story/
-│       │   └── <name>-shaping-strategy.md
-│       └── slice-1/
-│           ├── interaction-tree.md
-│           └── state-model.md
+│   └── (legacy) ace-shaping/story/ — use shaping/ instead
+├── shaping/
+│   ├── strategy.md
+│   └── slice-1/
+│       ├── interaction-tree.md
+│       └── state-model.md
 └── ...                        # user's project files
 ```
 
@@ -521,6 +521,6 @@ class AceConfig(BaseModel):
 | Skill content | Markdown | `skills/ace-<name>/content/*.md` (includes script-invocation.md for AI) |
 | Scanner rules | JSON | `skills/ace-<name>/rules/*.json` |
 | Assembled agent | Markdown | `skills/ace-<name>/AGENTS.md` |
-| Strategy | Markdown | `<skill_space>/ace-output/ace-shaping/story/<name>-shaping-strategy.md` |
+| Strategy | Markdown | `<skill_space>/shaping/strategy.md` |
 | Memory chunks | Markdown | `<skill_space>/ace-output/ace-context-to-memory/memory/<id>/*.md` |
-| Slice output | Markdown / JSON | `<skill_space>/ace-output/ace-shaping/slice-<n>/*.md` |
+| Slice output | Markdown / JSON | `<skill_space>/shaping/slice-<n>/*.md` |

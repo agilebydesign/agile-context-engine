@@ -437,7 +437,7 @@ Strategy (Markdown Document)
      
 - Path path
      Path to strategy document
-     invariant: <workspace>/ace-output/ace-shaping/story/<name>-shaping-strategy.md; returns Path, not String
+     invariant: <workspace>/shaping/strategy.md; returns Path, not String
 - SourceAnalysis source_analysis
      Semantic structure within the markdown
 - InteractionTree

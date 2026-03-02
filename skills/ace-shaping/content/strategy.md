@@ -4,7 +4,7 @@
 1. **Analyze the source** to determine where complexity lives.
 2. **Present the strategy** to the user. Include: complexity areas identified, proposed Epic/Story breakdown, assumptions, break down strategy, **proposed traversal order (slices)**.
 3. **Validate until reasonable** — User reviews; refine until approved. Do not produce an interaction tree until then.
-4. **Save the strategy** to `<skill-space>/docs/strategy.md`.
+4. **Save the strategy** to `<skill-space>/shaping/strategy.md`.
 
 <!-- section: shaping.strategy.criteria -->
 ## Strategy Criteria

@@ -1,6 +1,6 @@
 # Required Output Structure
 
-**Output path (default):** `<skill-space>/docs/output.md` — write the Interaction Tree and State Model here. Configurable via skill-space config.
+**Output path (default):** `<skill-space>/shaping/` — write the Interaction Tree and State Model in `shaping/slice-N/` per slice. Configurable via skill-space config.
 
 **Workflow:** Start with interactions. Derive concepts from the interactions. Model the concepts in OOAD style (State Model). Add inline Concepts blocks under Epics with compact definitions (properties, operations). Complete this full workflow for each slice.
 

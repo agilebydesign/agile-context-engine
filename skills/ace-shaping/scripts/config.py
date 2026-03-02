@@ -11,6 +11,7 @@ class AceConfig(BaseModel):
     skills: list[str]
     skills_config: dict | None = None
     constraints: list[dict] = []
+    context_paths: list[str] = []
 
     class Config:
         extra = "forbid"

@@ -17,8 +17,8 @@ When the user says "create the story map," "proceed," "build it," "generate the 
 
 ### Output Paths (default)
 
-- **Strategy:** `<skill-space>/docs/strategy.md`
-- **Output:** `<skill-space>/docs/output.md`
+- **Strategy:** `<skill-space>/shaping/strategy.md`
+- **Output:** `<skill-space>/shaping/slice-N/` (per slice)
 
 These paths can be configured under the skill-space config (`ace-config.json` or equivalent) so the user can choose where files go and what they are named.
 
@@ -26,13 +26,13 @@ These paths can be configured under the skill-space config (`ace-config.json` or
 
 **STOP.** Before producing any Interaction Tree or State Model, you MUST:
 
-1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/docs/strategy.md`)
+1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/shaping/strategy.md`)
 2. [ ] Get user approval of the strategy
 3. [ ] Run Slice 1 only (4–7 stories) and get approval before continuing
 
 ## Process Checklist
 
-- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/docs/strategy.md`
+- [ ] **Strategy Phase complete** — Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/shaping/strategy.md`
 - [ ] **Strategy approved by user** — Do not produce an interaction tree until then
 - [ ] **Slice 1 produced** — 4–7 stories for the first slice
 - [ ] **Slice 1 approved** — User reviews; corrections → add DO/DO NOT to strategy (with wrong/correct examples); re-run until approved

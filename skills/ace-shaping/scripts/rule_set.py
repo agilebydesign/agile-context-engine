@@ -20,7 +20,6 @@ class RuleSet:
         content_dir = self.skill_path / "content"
         rules_dir = self.skill_path / "rules"
 
-        # Content files in order (shaping-core, shaping-process, etc.)
         content_order = [
             "shaping-core.md",
             "shaping-process.md",
@@ -36,12 +35,10 @@ class RuleSet:
                 parts.append(p.read_text(encoding="utf-8").strip())
                 parts.append("\n\n---\n\n")
 
-        # Scanner rules
         scanners_path = rules_dir / "scanners.json"
         if scanners_path.exists():
             self.scanner_rules = json.loads(scanners_path.read_text(encoding="utf-8"))
 
-        # Rule markdown
         for md in sorted(rules_dir.glob("*.md")):
             self.markdown_paths.append(md)
             parts.append(md.read_text(encoding="utf-8").strip())

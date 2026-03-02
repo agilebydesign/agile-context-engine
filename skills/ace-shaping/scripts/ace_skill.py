@@ -4,18 +4,15 @@ AceSkill — skill with Engine injected; operation_sections; instructions proper
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .rule_set import RuleSet
-from .instructions import Instructions
+from rule_set import RuleSet
+from instructions import Instructions
 
 if TYPE_CHECKING:
-    from .engine import AgileContextEngine
+    from engine import AgileContextEngine
 
 
 class AceSkill:
-    """
-    Ace-skill. Receives Engine at construction.
-    Uses engine for context (workspace, strategy_path, slice_index).
-    """
+    """Ace-skill. Receives Engine at construction."""
 
     def __init__(self, path: str | Path, engine: "AgileContextEngine"):
         self.path = Path(path).resolve()
@@ -26,12 +23,10 @@ class AceSkill:
 
     @property
     def operation_sections(self) -> dict[str, list[str]]:
-        """Map: operation → section IDs to inject."""
         return self._operation_sections
 
     @property
     def instructions(self) -> Instructions:
-        """Assembles from operation_sections and engine context. No context parameter."""
         if self._instructions is None:
             self._instructions = Instructions(
                 operation_sections=self._operation_sections,
@@ -41,7 +36,6 @@ class AceSkill:
         return self._instructions
 
     def _load_operation_sections(self) -> dict[str, list[str]]:
-        """Load operation_sections from skill-config.json or default for ace-shaping."""
         import json
 
         skill_config_path = self.path / "skill-config.json"
