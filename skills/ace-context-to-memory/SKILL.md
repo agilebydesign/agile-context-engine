@@ -22,6 +22,12 @@ Converts source documents to markdown and chunks them for agent memory. Pipeline
 - Mentions "convert and chunk", "ingest for agent", or "memory pipeline"
 - Has added new files and wants them processed
 
+## CRITICAL: Respect User Scope
+
+- **One file**: When user says "one file", "this file", "just X.pdf", or names a specific file → use `--file <path>`. Process ONLY that file.
+- **Folder**: When user says "folder", "all", "everything in X", or explicitly requests a folder → use `--memory <path>`.
+- **Do NOT** process entire folders when the user asked for a single file.
+
 ## Pipeline Overview
 
 1. **Convert**: Use `markitdown` to convert supported files to markdown. Images extracted and referenced.
@@ -32,7 +38,8 @@ Converts source documents to markdown and chunks them for agent memory. Pipeline
 
 Run from workspace root. Scripts in `skills/ace-context-to-memory/scripts/`.
 
-- `convert_to_markdown.py --memory <source_path>`
+- `convert_to_markdown.py --file <file_path>` — **single file only** (use when user asks for one file); creates `memory/<filename_stem>/` so all chunks stay in one place
+- `convert_to_markdown.py --memory <source_path>` — folder (all supported files)
 - `chunk_markdown.py --memory <memory_name>`
 - `organize_story_map_hierarchy.py --memory <memory_name> [--source <xlsx_path>]`
 

@@ -69,6 +69,28 @@ def _chunk_by_headings(text: str) -> list[tuple[str, str]]:
     return chunks
 
 
+def _chunk_by_section_markers(text: str) -> list[tuple[str, str]]:
+    """Split on CHAPTER, INTRODUCTION, or similar section markers (for PDFs without # headers)."""
+    lines = text.split("\n")
+    chunks, current_lines, chunk_idx = [], [], 0
+    # Match lines starting with CHAPTER N (PDF/rpg book structure). Use CHAPTER only to avoid over-splitting on repeated INTRODUCTION headers.
+    section_pat = re.compile(r"^CHAPTER\s+\d+\b", re.IGNORECASE)
+
+    for line in lines:
+        if section_pat.search(line) and len(current_lines) >= MIN_CHUNK_LINES:
+            chunks.append((f"section_{chunk_idx:02d}", "\n".join(current_lines)))
+            current_lines, chunk_idx = [], chunk_idx + 1
+        current_lines.append(line)
+
+    if current_lines:
+        chunks.append((f"section_{chunk_idx:02d}", "\n".join(current_lines)))
+    return chunks
+
+
+def _has_markdown_headings(text: str) -> bool:
+    return bool(re.search(r"^#{1,2}\s", text, re.MULTILINE))
+
+
 def _is_slide_deck(text: str) -> bool:
     return bool(re.search(r"<!-- Slide number: \d+ -->", text))
 
@@ -95,7 +117,10 @@ def chunk_file(md_path: Path, conv_root: Path, chunk_root: Path) -> int:
     if _is_slide_deck(text):
         chunks = _chunk_by_slides(text)
     elif text.count("\n") > 200:
-        chunks = _chunk_by_headings(text)
+        if _has_markdown_headings(text):
+            chunks = _chunk_by_headings(text)
+        else:
+            chunks = _chunk_by_section_markers(text)
     else:
         chunks = [(stem, text)]
 

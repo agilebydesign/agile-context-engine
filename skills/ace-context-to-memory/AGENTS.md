@@ -18,6 +18,8 @@
 - **Response**: Skill converts each original to markdown; chunks markdown into memory; each file → one memory; memories nested; each memory points to original and markdown
 - **Resulting State**: Memories available for future reference
 
+**CRITICAL — Respect user scope**: If user specifies ONE file (e.g. "this file", "just X.pdf", "one file"), use `convert_to_markdown.py --file <path>` and process ONLY that file. Do NOT use `--memory` on a folder when user asked for a single file.
+
 ---
 
 # Pipeline Process
@@ -70,6 +72,7 @@
 
 - **Convert**: `memory/<name>/<rel>/converted/` (markdown + images)
 - **Chunk**: `memory/<name>/<rel>/chunked/` (chunked markdown)
+- **Single-file** (`--file`): `memory/<filename_stem>/` — subfolder named after the file; all chunks in one place
 - **Organize**: `memory/<name>/chunked/` (hierarchical markdown for Excel story maps)
 
 ## Pipeline Mode (single-folder)
@@ -93,14 +96,18 @@ Run from workspace root. Set `CONTENT_MEMORY_ROOT` if workspace root differs fro
 
 Converts source files to markdown. Creates `memory/<name>/*/converted/`.
 
-**Usage:**
+**Single file (use when user asks for one file):**
+```bash
+python scripts/convert_to_markdown.py --file <file_path>
+```
+
+**Folder (use only when user explicitly wants a folder processed):**
 ```bash
 python scripts/convert_to_markdown.py --memory <source_path>
 ```
 
-- `<source_path>`: Path to folder with documents (e.g. `Assets/06 Client Engagements/Active/Scotiabank/CBE`)
-- Tries under `Assets/` first, then workspace root
-- Creates `memory/<name>/` preserving folder structure
+- `--file`: Process ONLY the specified file. Use when user says "one file", "this file", "just X.pdf".
+- `--memory`: Process all supported files in folder. Tries under `Assets/` first, then workspace root.
 
 ## chunk_markdown.py
 

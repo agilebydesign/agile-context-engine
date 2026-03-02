@@ -8,14 +8,18 @@ Run from workspace root. Set `CONTENT_MEMORY_ROOT` if workspace root differs fro
 
 Converts source files to markdown. Creates `memory/<name>/*/converted/`.
 
-**Usage:**
+**Single file (when user asks for one file):**
+```bash
+python scripts/convert_to_markdown.py --file <file_path>
+```
+
+**Folder (when user explicitly wants folder processed):**
 ```bash
 python scripts/convert_to_markdown.py --memory <source_path>
 ```
 
-- `<source_path>`: Path to folder with documents (e.g. `Assets/06 Client Engagements/Active/Scotiabank/CBE`)
-- Tries under `Assets/` first, then workspace root
-- Creates `memory/<name>/` preserving folder structure
+- `--file`: Process ONLY the specified file. Use when user says "one file", "this file", "just X.pdf". Output: `memory/<filename_stem>/` — subfolder named after the file; all chunks in one place.
+- `--memory`: Process all supported files in folder. Tries under `Assets/` first, then workspace root.
 
 ## chunk_markdown.py
 

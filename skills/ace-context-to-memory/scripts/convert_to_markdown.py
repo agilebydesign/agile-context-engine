@@ -2,11 +2,15 @@
 Convert source files to markdown for agent memory.
 
 Usage:
-  python convert_to_markdown.py --memory <source_path>
-  python convert_to_markdown.py --memory Assets/06\ Client\ Engagements/Active/Scotiabank/CBE
+  python convert_to_markdown.py --memory <source_path>   # folder: all supported files
+  python convert_to_markdown.py --file <file_path>      # single file only
 
 Run from workspace root. Creates memory/<name>/*/converted/ (markdown + images).
 Requires: pip install "markitdown[all]"
+
+CRITICAL: Use --file when user asks for ONE file. Use --memory only when user
+explicitly wants a folder processed. Do not process entire folders when user
+specifies a single file.
 """
 
 import sys
@@ -52,6 +56,39 @@ def convert_one(src: Path, out_dir: Path, source_ref: bool = True) -> Path:
     out = out_dir / (src.stem + ".md")
     out.write_text(text, encoding="utf-8")
     return out
+
+
+def _run_file_mode(file_path: str) -> None:
+    """Convert a single file to markdown. Only processes that file."""
+    p = Path(file_path)
+    if not p.is_absolute():
+        for base in (ASSETS, ROOT):
+            candidate = base / file_path
+            if candidate.is_file():
+                p = candidate
+                break
+    if not p.is_file():
+        print(f"File not found: {file_path}")
+        return
+    if p.suffix.lower() not in SUPPORTED:
+        print(f"Unsupported format: {p.suffix}. Supported: {sorted(SUPPORTED)}")
+        return
+
+    memory_name = p.stem or "memory"  # subfolder named after the file
+    rel_parent = Path(".")
+    out_root = MEMORY / memory_name
+    converted_dir = out_root / rel_parent / "converted"
+    chunked_dir = out_root / rel_parent / "chunked"
+    converted_dir.mkdir(parents=True, exist_ok=True)
+    chunked_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"File: {p.name} -> memory/{memory_name}/converted/\n")
+    try:
+        out = convert_one(p, converted_dir)
+        kb = out.stat().st_size // 1024
+        print(f"Done: 1 file converted ({kb} KB)")
+    except (Exception, BaseException) as e:
+        print(f"FAIL  {type(e).__name__}: {e}")
 
 
 def _run_memory_mode(memory_path: str) -> None:
@@ -110,13 +147,20 @@ def _run_memory_mode(memory_path: str) -> None:
 
 
 def main():
+    file_idx = next((i for i, a in enumerate(sys.argv) if a == "--file"), None)
+    if file_idx is not None and file_idx + 1 < len(sys.argv):
+        _run_file_mode(sys.argv[file_idx + 1])
+        return
+
     memory_idx = next((i for i, a in enumerate(sys.argv) if a == "--memory"), None)
     if memory_idx is not None and memory_idx + 1 < len(sys.argv):
         _run_memory_mode(sys.argv[memory_idx + 1])
         return
 
-    print("Usage: python convert_to_markdown.py --memory <source_path>")
-    print("  source_path: folder with documents (e.g. Assets/06 Client Engagements/Active/Scotiabank/CBE)")
+    print("Usage:")
+    print("  python convert_to_markdown.py --file <file_path>     # single file only")
+    print("  python convert_to_markdown.py --memory <source_path> # folder (all files)")
+    print("  Use --file when user asks for ONE file. Use --memory only for folders.")
 
 
 if __name__ == "__main__":
