@@ -31,12 +31,8 @@ class AgileContextEngine:
             raise FileNotFoundError(f"Config not found: {self.config_path}")
         data = json.loads(self.config_path.read_text(encoding="utf-8"))
         config = AceConfig.model_validate(data)
-        if config.skill_space_path:
-            self.workspace_path = Path(config.skill_space_path).resolve()
-            self._update_strategy_path()
-        base = self.workspace_path or self.engine_root
         self.context_paths = [
-            (base / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
+            (self.engine_root / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
             for p in (config.context_paths or [])
         ]
         order = (config.skills_config or {}).get("order", config.skills)
@@ -47,17 +43,20 @@ class AgileContextEngine:
                 skill = AceSkill(skill_path, engine=self)
                 skill.rule_set.load()
                 self.skills.append(skill)
+        if self.skills:
+            self.workspace_path = self._skill_space_from_path(self.skills[0].path)
+            self._update_strategy_path()
+            self._create_output_dirs()
         return self
 
-    def set_workspace(self, path: str | Path) -> Path:
-        """Set workspace; persist to config; create output dirs for each skill."""
-        self.workspace_path = Path(path).resolve()
-        if not self.workspace_path.exists():
-            self.workspace_path.mkdir(parents=True, exist_ok=True)
-        self._persist_config()
-        self._create_output_dirs()
-        self._update_strategy_path()
-        return self.workspace_path
+    def _skill_space_from_path(self, skill_path: Path) -> Path:
+        """Skill space = parent of .agents/skills (or parent of skills when in engine)."""
+        p = skill_path.resolve()
+        if p.parent.name == "skills" and p.parent.parent.name == ".agents":
+            return p.parent.parent.parent
+        if p.parent.name == "skills":
+            return p.parent.parent
+        return p.parent
 
     def get_skill(self, name: str) -> AceSkill | None:
         """Get skill by name (e.g. ace-shaping)."""
@@ -75,24 +74,21 @@ class AgileContextEngine:
     def build_skill(self, skill_path: str | Path) -> Path:
         return build_skill(skill_path, engine_root=self.engine_root)
 
-    def _persist_config(self) -> None:
-        data = json.loads(self.config_path.read_text(encoding="utf-8"))
-        data["skill_space_path"] = str(self.workspace_path)
-        self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    def _output_folder_for_skill(self, skill_name: str) -> str:
+        """Strip ace- prefix: ace-shaping → shaping, ace-context-to-memory → context-to-memory."""
+        if skill_name.startswith("ace-"):
+            return skill_name[4:]
+        return skill_name
 
     def _create_output_dirs(self) -> None:
         if not self.workspace_path:
             return
         for skill in self.skills:
             skill_name = skill.path.name
-            if skill_name == "ace-shaping":
-                output_root = self.workspace_path / "shaping"
-                output_root.mkdir(parents=True, exist_ok=True)
-                (output_root / "slice-1").mkdir(parents=True, exist_ok=True)
-            else:
-                output_root = self.workspace_path / "ace-output" / skill_name
-                output_root.mkdir(parents=True, exist_ok=True)
-                (output_root / "slice-1").mkdir(parents=True, exist_ok=True)
+            output_folder = self._output_folder_for_skill(skill_name)
+            output_root = self.workspace_path / output_folder
+            output_root.mkdir(parents=True, exist_ok=True)
+            (output_root / "slice-1").mkdir(parents=True, exist_ok=True)
 
     def _update_strategy_path(self) -> None:
         if not self.workspace_path:
@@ -101,7 +97,6 @@ class AgileContextEngine:
         candidates = [
             self.workspace_path / "shaping" / "strategy.md",
             self.workspace_path / "docs" / "strategy.md",
-            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "strategy.md",  # legacy
         ]
         for p in candidates:
             if p.exists():

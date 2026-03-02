@@ -136,7 +136,7 @@
      │    Failure Modes: Strategy not approved; slice index invalid; output validation fails
      │    Steps:
      │    1. User → AI: generate next slice (e.g. "Slice 1", "next slice")
-     │    2. Caller: Injects context paths and instructions for generate_slice into prompt (shaping.process.intro, shaping.strategy.slices.running, shaping.strategy.corrections, shaping.output.*, shaping.validation.*, shaping.core.*, strategy doc path)
+     │    2. Engine Injects context paths and instructions for generate_slice into prompt (shaping.process.intro, shaping.strategy.slices.running, shaping.strategy.corrections, shaping.output.*, shaping.validation.*, shaping.core.*, strategy doc path)
      │    3. AI: Reads context from paths; loads strategy doc; instructions already in prompt
      │    4. AI: Determines current slice from strategy order; produces 4–7 stories; derives concepts; builds Interaction Tree + State Model
      │    5. AI: Generates slice output; validates against checklist; caller persists to output path

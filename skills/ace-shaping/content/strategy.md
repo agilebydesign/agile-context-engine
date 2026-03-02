@@ -80,3 +80,10 @@ When analyzing **existing content**, review and follow the strategy.
 
 - **Example (wrong):** `AceSkill.get_instructions_for(operation, context)` — context passed as parameter.
 - **Example (correct):** AceSkill has `Engine engine` (injected); `instructions` property; assembles using `engine.workspace`, `engine.strategy_path` when needed.
+
+### Skill Update Workflow
+
+**DO** — Update the ace-shaping skill in `agile-context-engine/skills/ace-shaping/` first (core); then copy those updates to test installations (e.g. `mutants-and-masterminds/.agents/skills/ace-shaping/`).
+
+- **Example (wrong):** Editing the skill only in a test project; creating standalone scripts in test without updating core; core and test copies drift.
+- **Example (correct):** Edit `agile-context-engine/skills/ace-shaping/`; run build; copy updated `scripts/build.py`, `content/script-invocation.md`, and any other changed files to the test project's ace-shaping copy.

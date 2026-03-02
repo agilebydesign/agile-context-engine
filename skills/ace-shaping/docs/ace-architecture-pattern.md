@@ -168,7 +168,6 @@ agile-context-engine/
 
 ```json
 {
-  "skill_space_path": "/abs/path/to/skill-space",
   "skills": ["skills/ace-shaping", "skills/ace-context-to-memory", "skills/ace-build"],
   "skills_config": {
     "order": ["ace-context-to-memory", "ace-shaping"]
@@ -177,8 +176,7 @@ agile-context-engine/
 }
 ```
 
-- `skill_space_path`: Current skill space; written when user sets skill space.
-- `skills`: List of skill paths (relative to engine root).
+- `skills`: List of skill paths (relative to engine root). Skill space is derived from skill path (parent of `.agents/skills`).
 - `skills_config.order`: Optional load/run order.
 - `constraints`: Architecture-pattern constraints (e.g. `{"pattern": "must use X", "scope": "Epic"}`).
 
@@ -186,7 +184,7 @@ agile-context-engine/
 
 ### 1.5 Engine Initialization (Initialize Agile Context Engine)
 
-**Applies to:** Epic **Initialize Agile Context Engine** — Stories: *Load registered skills and rule sets*, *Set workspace*.
+**Applies to:** Epic **Initialize Agile Context Engine** — Story: *Load registered skills and rule sets*.
 
 Config format and paths are in §1.4 and §1.3.
 
@@ -197,17 +195,10 @@ Config format and paths are in §1.4 and §1.3.
 | **Skills list** | Read from `conf/ace-config.json` → `skills` array (§1.4) |
 | **Per-skill load** | For each path in `skills`, instantiate `AceSkill` at `skills/<path>/` |
 | **Rule set load** | Per skill: `rules/*.md` (Markdown), `rules/scanners.json` (JSON). Merge into unified `RuleSet` per skill. |
-| **Engine API** | `Engine.load_skills()` or equivalent — reads config, loads each skill, loads rule sets |
+| **Skill space** | Derived from skill path — parent of `.agents/skills` (or parent of `skills` when in engine). No config. |
+| **Output folders** | Create `<skill_space>/<output-folder>/` for each skill; output folder = skill name with `ace-` stripped (e.g. ace-shaping → shaping, ace-context-to-memory → context-to-memory) |
+| **Engine API** | `Engine.load()` — reads config, loads skills, derives skill space, creates output dirs |
 | **Failure** | Malformed JSON; missing skill path; invalid rule path → report and fail |
-
-#### Set workspace
-
-| Concept / Behavior | Implementation |
-|--------------------|----------------|
-| **Workspace path** | User specifies path; engine writes to `conf/ace-config.json` → `skill_space_path` |
-| **Output folders** | Create `<skill_space_path>/ace-output/<skill-name>/` for each registered skill |
-| **Engine API** | `Engine.set_workspace(path)` — update config, create output dirs |
-| **Failure** | Invalid path; JSON write fails → report and fail |
 
 ---
 
@@ -413,13 +404,13 @@ Everything below is placeholder. We will go into more detail on Create Ace-Skill
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Populate memory** | Invoke ace-context-to-memory: convert → chunk → sync to `<workspace>/ace-output/ace-context-to-memory/memory/`. |
+| **Populate memory** | Invoke ace-context-to-memory: convert → chunk → sync to `<workspace>/context-to-memory/memory/`. |
 | **Memory layout** | Each source file → one folder under `memory/`; folder = one `Memory`; chunks as `.md` files with `<!-- Source: path -->`. |
 | **ContextSources** | `src/context_sources.py` — `class ContextSources` with `gather(content_sources, workspace, strategy)`. |
 | **Memories** | `src/memories.py` — `Memories`, `Memory`, `Chunk`. |
 | **Refer** | `Memories.refer()` returns `Chunk[]` for shaping. |
 
-**Memory path:** `<skill_space>/ace-output/ace-context-to-memory/memory/<artifact_id>/`  
+**Memory path:** `<skill_space>/context-to-memory/memory/<artifact_id>/`  
 **Chunk files:** `chunk_001.md`, `chunk_002.md`, … with source attribution in each.
 
 ---
@@ -456,20 +447,18 @@ Everything below is placeholder. We will go into more detail on Create Ace-Skill
 
 ```
 <skill_space>/
-├── ace-output/
-│   ├── ace-context-to-memory/
-│   │   └── memory/
-│   │       ├── <artifact_id_1>/
-│   │       │   ├── chunk_001.md
-│   │       │   └── ...
-│   │       └── <artifact_id_2>/
-│   │           └── ...
-│   └── (legacy) ace-shaping/story/ — use shaping/ instead
 ├── shaping/
 │   ├── strategy.md
 │   └── slice-1/
 │       ├── interaction-tree.md
 │       └── state-model.md
+├── context-to-memory/
+│   └── memory/
+│       ├── <artifact_id_1>/
+│       │   ├── chunk_001.md
+│       │   └── ...
+│       └── <artifact_id_2>/
+│           └── ...
 └── ...                        # user's project files
 ```
 
@@ -502,13 +491,12 @@ from pydantic import BaseModel
 from pathlib import Path
 
 class AceConfig(BaseModel):
-    skill_space_path: str | None = None
     skills: list[str]
     skills_config: dict | None = None
     constraints: list[dict] = []
 
     class Config:
-        extra = "forbid"  # strict schema
+        extra = "ignore"  # ignore legacy skill_space_path
 ```
 
 ---
@@ -522,5 +510,5 @@ class AceConfig(BaseModel):
 | Scanner rules | JSON | `skills/ace-<name>/rules/*.json` |
 | Assembled agent | Markdown | `skills/ace-<name>/AGENTS.md` |
 | Strategy | Markdown | `<skill_space>/shaping/strategy.md` |
-| Memory chunks | Markdown | `<skill_space>/ace-output/ace-context-to-memory/memory/<id>/*.md` |
+| Memory chunks | Markdown | `<skill_space>/context-to-memory/memory/<id>/*.md` |
 | Slice output | Markdown / JSON | `<skill_space>/shaping/slice-<n>/*.md` |

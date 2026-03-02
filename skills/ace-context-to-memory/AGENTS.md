@@ -60,7 +60,7 @@
 **Story: Sync workspace to memory (convert + copy + chunk)**
 
 - **Required State**: —
-- **Response**: Skill converts each original to markdown; copies chunks to `<workspace>/ace-output/ace-context-to-memory/memory/`; each file → one memory; memories nested; each memory points to original and markdown
+- **Response**: Skill converts each original to markdown; copies chunks to `<workspace>/context-to-memory/memory/`; each file → one memory; memories nested; each memory points to original and markdown
 - **Resulting State**: Memories populated
 - **Failure Modes**: Workspace missing; copy fails; chunk fails
 
