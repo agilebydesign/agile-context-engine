@@ -8,6 +8,8 @@
 
 ## 1. Base Engine
 
+**Applies to:** All epics and skills (Create Ace-Skill, Initialize Agile Context Engine, Gather Context, Use Shape Skill). Base engine is foundational.
+
 The Agile Context Engine is the core — the engine for building and running skills in their entirety. It defines structure, config, and conventions. Ace-skills are built on top of it.
 
 ### 1.1 Global Decisions
@@ -20,6 +22,26 @@ The Agile Context Engine is the core — the engine for building and running ski
 | **Type safety** | **Yes — pydantic** | Use pydantic for config, strategy, and DTOs. Typed function signatures. Catches config/schema errors early. |
 | **Structured data** | **JSON** | Config, strategy metadata, scanner rules, engine state. |
 | **Text / instructions / rules** | **Markdown** | Content files, rules, instructions, assembled agent output. |
+
+### 1.1.5 Path (Cross-cutting)
+
+**Applies to:** All epics (file paths used throughout).
+
+**All file-returning properties return Path objects, not strings.**
+
+The Path object represents the file or directory at that path. Use Path for:
+
+- **OS separators** — Different operating systems use different separators; Path handles this.
+- **Centralized path logic** — Dispersing path logic across the codebase is error-prone; a single Path abstraction keeps it in one place.
+- **Resolution, joining, existence checks** — Path provides resolve(), join, exists(), read_text(), etc.
+
+**Implementation:** Reuse `agile_bots/src/bot_path` (BotPath, StoryGraphPaths) in its entirety. Do not reimplement. The engine and ace-skills should depend on that module or a shared copy of it.
+
+| Property / Operation | Returns | Notes |
+|----------------------|---------|-------|
+| Any property that points to a file or directory | `Path` | Never `String` for file paths |
+| Path.join(...) | `Path` | Use Path for joining |
+| Path.resolve() | `Path` | Absolute, normalized |
 
 ---
 
@@ -162,7 +184,36 @@ agile-context-engine/
 
 ---
 
+### 1.5 Engine Initialization (Initialize Agile Context Engine)
+
+**Applies to:** Epic **Initialize Agile Context Engine** — Stories: *Load registered skills and rule sets*, *Set workspace*.
+
+Config format and paths are in §1.4 and §1.3.
+
+#### Load registered skills and rule sets
+
+| Concept / Behavior | Implementation |
+|--------------------|----------------|
+| **Skills list** | Read from `conf/ace-config.json` → `skills` array (§1.4) |
+| **Per-skill load** | For each path in `skills`, instantiate `AceSkill` at `skills/<path>/` |
+| **Rule set load** | Per skill: `rules/*.md` (Markdown), `rules/scanners.json` (JSON). Merge into unified `RuleSet` per skill. |
+| **Engine API** | `Engine.load_skills()` or equivalent — reads config, loads each skill, loads rule sets |
+| **Failure** | Malformed JSON; missing skill path; invalid rule path → report and fail |
+
+#### Set workspace
+
+| Concept / Behavior | Implementation |
+|--------------------|----------------|
+| **Workspace path** | User specifies path; engine writes to `conf/ace-config.json` → `skill_space_path` |
+| **Output folders** | Create `<skill_space_path>/ace-output/<skill-name>/` for each registered skill |
+| **Engine API** | `Engine.set_workspace(path)` — update config, create output dirs |
+| **Failure** | Invalid path; JSON write fails → report and fail |
+
+---
+
 ## 2. Ace-Skill
+
+**Applies to:** Epic Create Ace-Skill;
 
 Ace-skills are built on top of the base engine. They use engine APIs for scaffold, build, and structure.
 
@@ -174,17 +225,18 @@ Domain concepts for Create Ace-Skill, mapped to implementation: exact file path,
 
 #### AceSkill
 
+**Object model:** AceSkill receives `Engine` injected at construction. Uses engine for context (workspace, strategy_path, etc.). No context parameters on instruction assembly — pulls from engine.
+
 | Concept / Property / Operator | Implementation |
 |------------------------------|----------------|
 | Class | `src/ace_skill.py` → `class AceSkill` |
+| `AceSkill.engine` | Injected at construction. Used for context (workspace, strategy_path, slice_index). |
 | `AceSkill.path` | `skills/ace-<name>/` |
 | `AceSkill.rule_set` | `skills/ace-<name>/rules/` (dir); `rules/scanners.json` (JSON); `rules/*.md` (Markdown) |
 | `AceSkill.scripts` | `skills/ace-<name>/scripts/` (dir); each script `scripts/<script>.py` |
-| `AceSkill.core_definition` | `skills/ace-<name>/content/core-definitions.md` (Markdown) |
-| `AceSkill.intro` | `skills/ace-<name>/content/intro.md` (Markdown) |
-| `AceSkill.output_structure` | `skills/ace-<name>/content/output-structure.md` (Markdown) |
-| `AceSkill.shape` | `skills/ace-<name>/content/shaping-process.md` (Markdown) |
-| `AceSkill.validation` | `skills/ace-<name>/content/validation.md` (Markdown) |
+| `AceSkill.core_definition`, `intro`, `output_structure`, `shape`, `validation` | `skills/ace-<name>/content/*.md` |
+| `AceSkill.operation_sections` | Map: operation → section IDs to inject (create_strategy, generate_slice, improve_strategy, improve_skill) |
+| `AceSkill.instructions` | Property. Assembles from `operation_sections` and engine context. No context parameter. |
 | `AceSkill.assembled_agent` | See AssembledAgent |
 | `AceSkill.build()` | Invokes `Engine.build_skill(path)`; see BuildScript |
 
@@ -234,42 +286,13 @@ Domain concepts for Create Ace-Skill, mapped to implementation: exact file path,
 
 ### 2.2 Epic: Create Ace-Skill
 
-#### Story: Create scaffolding via script
+**Applies to:** Epic **Create Ace-Skill** — Stories: *Create scaffolding via script*, *AI fills content pieces from input*, *User completes missing pieces*, *AI reruns build script*.
 
-| Aspect | Implementation |
-|--------|----------------|
-| **Skill** | `skills/ace-build/` (Build-ACE skill) |
-| **Script** | `skills/ace-build/scripts/scaffold.py` — thin entry point |
-| **Script behavior** | Parses `--name`, `--path`; calls `engine.scaffold_skill(name, path)`. Does **not** define structure. |
-| **Engine** | `Engine.scaffold_skill(name, path)` — uses `get_skill_scaffold_spec()` from engine; creates dirs and files. All logic centralized. |
-| **Output structure** | Defined by engine (see §2.1 Concept Implementation). Directory, content (including script-invocation.md for skills with scripts), rules, scripts, metadata all come from engine spec. |
-| **Invocation** | `python scripts/scaffold.py --name ace-foo --path skills/ace-foo` (from engine root or `skills/ace-build/`) |
+Implementation details (paths, scripts, engine APIs, output structure) are in §2.1 Concept Implementation. The only story-specific behavior not covered there:
 
-#### Story: AI fills content pieces from input
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Input** | Markdown path(s), prompts, or raw text passed to Build-ACE skill. |
-| **Target files** | `skills/ace-<name>/content/*.md` (core-definitions, intro, output-structure, shaping-process, validation) |
-| **Format** | Markdown. AI writes/overwrites these files per skill guidance. |
-| **Script invocation** | Build-ACE skill has `content/script-invocation.md` that tells the AI how to call scaffold.py and build.py (params, when, sequencing). AI reads this before invoking Python. |
-
-#### Story: User completes missing pieces
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Gap reporting** | AI returns list of missing/incomplete pieces (e.g. `["core-definitions", "validation"]`). |
-| **User edit** | User edits `skills/ace-<name>/content/<piece>.md` directly. |
-| **Re-check** | AI re-reads files and re-validates. |
-
-### Story: AI reruns build script
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Script** | `skills/ace-<name>/scripts/build.py` — thin entry point; calls `engine.build_skill(skill_path)` or equivalent. |
-| **Engine** | `Engine.build_skill(path)` — assembles content per engine conventions; writes AGENTS.md, rules, etc. |
-| **Output** | `skills/ace-<name>/AGENTS.md` (assembled agent file) |
-| **Other outputs** | `rules/*.md`, `rules/*.json`, `README.md`, `metadata.json`, `SKILL.md` per engine conventions |
+| Story | Additional behavior |
+|-------|---------------------|
+| **User completes missing pieces** | AI returns list of missing/incomplete pieces (e.g. `["core-definitions", "validation"]`); user edits `content/<piece>.md`; AI re-reads and re-validates. |
 
 ### Ace-Skill Directory Layout (output of Create Skill)
 
@@ -297,6 +320,83 @@ skills/ace-<name>/
 
 ---
 
+## 3. Instruction Injection
+
+**Applies to:** Epic **Use Shape Skill** (Create Shaping Strategy, Generate Slices, Improve Strategy); Epic **Initialize Agile Context Engine** (Load registered skills and rule sets — AceSkill must support `operation_sections` and `instructions`).
+
+Instructions are assembled and **injected** into the AI prompt. The AI doesn't "go read" the rules — they're given. The caller (MCP, CLI, panel, etc.) asks the skill for instructions before the AI runs an operation and injects the assembled markdown into the prompt.
+
+### 3.1 Operations → Stories
+
+| Story | Operation | What it does |
+|-------|-----------|--------------|
+| Create Shaping Strategy | `create_strategy` | Analyze source; propose epic breakdown, slice order, assumptions; save strategy doc |
+| Generate Shaping Slices | `generate_slice` | Load strategy; produce 4–7 stories; output Interaction Tree + State Model |
+| Improve Strategy | `improve_strategy` | Add DO/DO NOT to strategy doc; re-run slice until approved |
+| Improve Skill (post-shaping) | `improve_skill` | Take accumulated corrections; update base skill content/rules |
+
+**Improve strategy** = corrections go into the strategy document. **Improve skill** = strategy doc improvements are applied to the skill's content and rules.
+
+### 3.2 Content Decomposition (Section IDs)
+
+**Applies to:** Epic **Initialize Agile Context Engine** (Load registered skills — skills expose sectioned content); Epic **Use Shape Skill** (all operations — caller assembles per operation).
+
+**Alignment convention:** Section IDs mirror domain. `shaping.X.Y` → content in file matching X (e.g. `shaping-strategy.md` for `shaping.strategy.*`). **Domain-led** layout: one file per domain.
+
+| File | Section IDs | Content |
+|------|-------------|---------|
+| **shaping-process.md** | `shaping.process.intro`, `shaping.process.post_shaping.review` | Process overview; post-shaping review |
+| **shaping-strategy.md** | `shaping.strategy.phase`, `shaping.strategy.criteria`, `shaping.strategy.slices.running`, `shaping.strategy.corrections` | Strategy phase, criteria, running slices, DO/DO NOT |
+| **shaping-output.md** | `shaping.output.interaction_tree`, `shaping.output.state_model` | Interaction Tree and State Model format |
+| **shaping-validation.md** | `shaping.validation.checklist`, `shaping.validation.rules` | Validation checklist; DO/DON'T rules |
+| **shaping-core.md** | `shaping.core.interaction`, `shaping.core.state_concept` | Interaction and State Concept definitions |
+| **rules/** (markdown + JSON) | `shaping.validation.rules` | DO/DON'T rules, scanner configs; merged into RuleSet |
+
+### 3.3 What to Inject and When
+
+**Applies to:** Epic **Use Shape Skill** — Stories: Create Shaping Strategy, Generate Slices, Improve Strategy.
+
+| Operation | Inject | Story |
+|-----------|--------|-------|
+| **create_strategy** | `shaping.process.intro`, `shaping.strategy.phase`, `shaping.strategy.criteria`, `shaping.core.interaction`, `shaping.core.state_concept` | Create Shaping Strategy |
+| **generate_slice** | `shaping.process.intro`, `shaping.strategy.slices.running`, `shaping.strategy.corrections`, `shaping.output.*`, `shaping.validation.checklist`, `shaping.validation.rules`, `shaping.core.*`, **strategy doc** (from path) | Generate Shaping Slices |
+| **improve_strategy** | `shaping.strategy.corrections`, `shaping.validation.checklist` (correction format only) | Improve Strategy |
+| **improve_skill** | `shaping.process.post_shaping.review`, `shaping.strategy.corrections`, **strategy doc** (from path) | Improve Skill |
+
+**Corrections in generate_slice:** When user feedback implies a reusable rule, AI adds DO/DO NOT during the slice flow; no separate `improve_strategy` call needed.
+
+**Validation:** No separate validate operation. `generate_slice` injects both checklist and rules. AI validates against checklist before presenting; reports status (✓ pass or ⚠ needs attention) in response.
+
+**Scanners:** Programmatic validators live in `rules/` as config. Flow: (1) Generate output. (2) Run scanners. (3) Determine false positives. (4) Inject problems, fixes, and report location into the next prompt. AI addresses real issues in the next iteration.
+
+**Context (always available):** Context source paths, workspace path, strategy path (when exists). Caller provides these; not "injected" as instruction content.
+
+### 3.4 Injection Flow
+
+**Applies to:** Epic **Use Shape Skill** — Stories: Create Shaping Strategy, Generate Slices, Improve Strategy.
+
+| Step | Caller | Engine / Skill |
+|------|--------|----------------|
+| 1 | User requests operation (e.g. create strategy, generate slice 1) | — |
+| 2 | Asks skill for instructions: `skill.instructions.display_content("create_strategy")` | Skill assembles from `operation_sections` + engine context |
+| 3 | Injects assembled markdown + context paths into AI prompt | — |
+| 4 | AI runs operation; instructions already in prompt | — |
+
+**When:** Before the AI runs the operation. Caller injects; AI receives — doesn't have to "load" guidelines.
+
+### 3.5 Object Model (AceSkill, Instructions)
+
+**Applies to:** Epic **Initialize Agile Context Engine** (Load skills — inject Engine into each AceSkill); Epic **Create Ace-Skill** (AceSkill structure).
+
+| Concept | Implementation |
+|---------|----------------|
+| **Engine injection** | AceSkill receives `Engine` at construction. Uses engine for workspace, strategy_path, slice_index. |
+| **operation_sections** | Map: operation → section IDs. Keys: `create_strategy`, `generate_slice`, `improve_strategy`, `improve_skill`. From skill config. |
+| **instructions** | Property. Assembles from `operation_sections` and engine context. No context parameter — pulls from engine. |
+| **display_content(operation)** | Returns markdown for that operation. Caller injects into prompt. |
+
+` — context comes from engine.
+
 ---
 
 **══════════════════════════════════════════════════════════════**  
@@ -304,29 +404,6 @@ skills/ace-<name>/
 **══════════════════════════════════════════════════════════════**
 
 Everything below is placeholder. We will go into more detail on Create Ace-Skill first.
-
----
-
-## 7. Epic: Initialize Agile Context Engine
-
-### Story: Load registered skills and rule sets
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Config** | `conf/ace-config.json` → `skills` array |
-| **Skill load** | For each path in `skills`, instantiate `AceSkill(path)`. |
-| **AceSkill** | `src/ace_skill.py` — `class AceSkill` with `path`, `rule_set`, content strings. |
-| **RuleSet** | `src/rule_set.py` — `class RuleSet` loads markdown from `content/`, JSON from `rules/`. |
-| **Markdown paths** | `content/core-definitions.md`, `intro.md`, `output-structure.md`, `shaping-process.md`, `validation.md` |
-| **Scanner rules** | `rules/scanners.json` or per-scanner JSON in `rules/` |
-
-### Story: Set skill space
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Persist** | Write `skill_space_path` to `conf/ace-config.json`. |
-| **Create output dirs** | For each registered skill: `<skill_space_path>/ace-output/<skill_name>/` |
-| **Example** | Skill space `/home/user/proj` → `/home/user/proj/ace-output/ace-shaping/`, `/home/user/proj/ace-output/ace-context-to-memory/` |
 
 ---
 

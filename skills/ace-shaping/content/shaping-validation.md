@@ -1,5 +1,8 @@
 # Validation Pass
 
+<!-- section: shaping.validation.checklist -->
+## Validation Checklist
+
 After generating interactions and concepts, verify:
 
 **Interactions**

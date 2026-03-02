@@ -4,6 +4,7 @@
 
 **Workflow:** Start with interactions. Derive concepts from the interactions. Model the concepts in OOAD style (State Model). Add inline Concepts blocks under Epics with compact definitions (properties, operations). Complete this full workflow for each slice.
 
+<!-- section: shaping.output.interaction_tree -->
 ## A) Interaction Tree
 
 A hierarchical structure of meaningful exchanges between actors. All levels use the same interaction format — they differ only in granularity.
@@ -16,6 +17,8 @@ Epic (coarse interaction)
             └─ Scenario (optional grouping of steps)
                  └─ Step (atomic interaction to be done at a later state)
 ```
+
+**Node names:** Use bold for Epic and Story node names (e.g. `- Epic: **Create Ace-Skill**`, `- Story: **Create scaffolding via script**`).
 
 **Interaction format (used at every level):**
 
@@ -32,6 +35,7 @@ Epic (coarse interaction)
 
 **Granularity:** Each story must represent something tangible, valuable, and fine-grained enough to implement. Do not collapse large requirements / business rules / complexity into a single story.
 
+<!-- section: shaping.output.state_model -->
 ## B) State Model
 
 Identify the domain state concepts referenced in the Interaction Tree. Model each concept in OOAD style:

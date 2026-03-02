@@ -226,4 +226,30 @@ Shaping mode is about defining and modeling what we need, not building it yet.
 
 ---
 
+## 9. Inheritance Deduplication (DO / DO NOT)
+
+**DO** — Shared Required State, Initiation, and Resulting State on parent only; children use `—` when inheriting (no new or specialized state to add).
+
+- **Example (wrong):** Child story "Load registered skills" had Required State: "Shaping skill installed (ace-shaping)" and Initiation: "User runs engine" — same as parent Epic.
+- **Example (correct):** Child uses `—` for Required State and Initiation; parent Epic carries "Shaping skill installed (ace-shaping)" and "User runs engine".
+
+**DO NOT** — Repeat Required State, Initiation, or Resulting State in a child when it is the same as or overlaps with the parent. Put shared state on the parent; child inherits with `—`.
+
+- **Example (wrong):** Gather Context story repeated "Ready for strategy creation or slice production" as Resulting State when parent already had it.
+- **Example (correct):** Child uses `—`; parent carries the shared Resulting State.
+
+**DO NOT** — Put child-level detail (e.g. specific skill name, specific trigger) in the parent when it belongs to a single child. Parent states the shared requirement; child adds only specialization when needed.
+
+- **Example (wrong):** Epic had State Concepts: AgileContextEngine, AceSkill, RuleSet — but AceSkill and RuleSet are only used by the Load story.
+- **Example (correct):** Epic has AgileContextEngine only; Load story has AceSkill, RuleSet.
+
+**DO** — Scope State Concepts to the smallest subtree where each concept is used. Parent concepts only for concepts used by all or most children; child concepts only for concepts used by that child. Children list only concepts they add.
+
+**DO NOT** — Repeat parent concepts on children or put child-specific concepts on the parent.
+
+- **Example (wrong):** Epic had State Concepts: AgileContextEngine, AceSkill, RuleSet; Load story had same; Set workspace had AgileContextEngine, Workspace.
+- **Example (correct):** Epic has AgileContextEngine only; Load has AceSkill, RuleSet; Set workspace has Workspace only.
+
+---
+
 Please review this strategy. Once approved, I will produce **Slice 1** (4–7 stories: Shaping skill + Python/JSON hybrid — get the skill working with our rules and config; add architecture-pattern constraints).

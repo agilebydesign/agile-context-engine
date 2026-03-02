@@ -1,5 +1,6 @@
-# Core Definition
+# Core Definitions
 
+<!-- section: shaping.core.interaction -->
 ## An Interaction
 
 A single meaningful exchange between two actors that results in either:
@@ -16,6 +17,7 @@ A single meaningful exchange between two actors that results in either:
 - **Resulting State** — what must be true afterward (state only; no action language)
 - **Failure Modes** — how the exchange can fail (max 3, rule/state based)
 
+<!-- section: shaping.core.state_concept -->
 ## State Concept
 
 A domain concept that holds state and can be operated on. It is defined in the State Model and scoped to the Epic or Story that owns it.

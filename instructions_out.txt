@@ -1,0 +1,133 @@
+﻿## Process Overview
+
+Your task is to **shape** source material into an **Interaction Tree** and **State Model** ΓÇö a hierarchical structure of meaningful exchanges between actors, plus the domain concepts and state that support them. In Agile terminology, this translates to a **story map** and **domain model**. The hierarchy goes from larger, coarser-grain business outcomes (*Epics*) down to **Stories** ΓÇö tangible user and system interactions. Shaping means we do not go deeper than the story level; details are flushed out later.
+
+Each rule has a DO with example and a DO NOT with example.
+
+**You MUST follow this process before producing any output.**
+
+1. **Strategy Phase first** ΓÇö Analyze the source, propose Epic/Story breakdown and slice order, save the strategy. Do not produce an interaction tree until the strategy is approved.
+2. **Work in slices** ΓÇö Produce 4ΓÇô7 stories per slice. Get user approval before moving to the next slice.
+3. **No full output in one go** ΓÇö Do not produce a complete interaction tree in a single pass. Iterate slice by slice.
+
+### When the user says
+
+When the user says "create the story map," "proceed," "build it," "generate the output," or similar, you **MUST still begin with the Strategy Phase**. Do not skip to producing the full output.
+
+### Output Paths (default)
+
+- **Strategy:** `<skill-space>/docs/shaping-strategy.md`
+- **Output:** `<skill-space>/docs/shaping-output.md`
+
+These paths can be configured under the skill-space config (`ace-config.json` or equivalent) so the user can choose where files go and what they are named.
+
+### Before You Produce Output
+
+**STOP.** Before producing any Interaction Tree or State Model, you MUST:
+
+1. [ ] Complete the Strategy Phase (analyze source, propose breakdown, save strategy to `<skill-space>/docs/shaping-strategy.md`)
+2. [ ] Get user approval of the strategy
+3. [ ] Run Slice 1 only (4ΓÇô7 stories) and get approval before continuing
+
+## Process Checklist
+
+- [ ] **Strategy Phase complete** ΓÇö Source analyzed; Epic/Story breakdown proposed; strategy saved to `<skill-space>/docs/shaping-strategy.md`
+- [ ] **Strategy approved by user** ΓÇö Do not produce an interaction tree until then
+- [ ] **Slice 1 produced** ΓÇö 4ΓÇô7 stories for the first slice
+- [ ] **Slice 1 approved** ΓÇö User reviews; corrections ΓåÆ add DO/DO NOT to strategy (with wrong/correct examples); re-run until approved
+- [ ] **Next slice** ΓÇö Proceed to next slice; repeat until all slices done
+- [ ] **Post-shaping review** ΓÇö Review all corrections; determine what needs to change in rules/instructions
+
+---
+
+## Strategy Phase
+
+1. **Analyze the source** to determine where complexity lives.
+2. **Present the strategy** to the user. Include: complexity areas identified, proposed Epic/Story breakdown, assumptions, break down strategy, **proposed traversal order (slices)**.
+3. **Validate until reasonable** ΓÇö User reviews; refine until approved. Do not produce an interaction tree until then.
+4. **Save the strategy** to `<skill-space>/docs/shaping-strategy.md`.
+
+---
+
+## Strategy Criteria
+
+### 1 - Splitting Criteria
+
+**Stories** represent the "stopping point". Each story represents something tangible that a user can recognize while fine-grained enough to implement / deliver as independent work.
+
+**Determine splitting criteria** ΓÇö How do we split epics into sub-epics, and sub-epics into stories? Analyze the source to identify criteria that drive the split. Examples of ways to figure out splitting criteria:
+- **Business rules** ΓÇö Distinct rules or conditions that change behavior warrant separate stories when the interaction differs.
+- **System interactions** ΓÇö Different systems or integration points warrant separate stories when the exchange pattern differs.
+- **Workflows** ΓÇö Different sequences or paths warrant separate stories when steps, actors, or outcomes differ.
+- **Structure** ΓÇö Different concept shapes or taxonomies warrant separate stories when the concept structure changes the interaction.
+- **State** ΓÇö Different state transitions or preconditions warrant separate stories when the required or resulting state differs materially.
+
+State your splitting criteria and reasoning so the user can adjust.
+
+### 2 - Shaping Depth
+
+When shaping, choose the **depth** of what you produce:
+- **Interactions only** ΓÇö Capture only the interactions themselves, without actors.
+- **Interactions + actors** ΓÇö Interactions with initiating and supporting actors, but nothing more.
+- **State concepts without state changes** ΓÇö Identify and model State Concepts but not Required State and Resulting State for each interaction.
+- **Failure modes and responses** ΓÇö Include or omit Failure Modes and Response behavior.
+- **Deeper in some places** ΓÇö Go deeper in selected areas (steps, examples, acceptance criteria).
+
+Decide and document in the strategy what is in scope.
+
+### 3 - Traversal Order (Slices)
+
+The order in which you work through stories is **not** necessarily epic-by-epic. Slices are units of work that may cut across epics.
+
+**Ideas for prioritizing slices:**
+- Architectural slice ΓÇö Stories that establish the architecture
+- Domain slice ΓÇö Stories aligned by common business logic
+- Integration slice ΓÇö Stories across integration points
+- Workflow slice ΓÇö End-to-end workflow for a particular use case
+- Value slice ΓÇö Stories that provide the most value if done first
+- Risk slice ΓÇö Stories that de-risk some aspect of the solution
+
+Favour slicing vertically, often by a common theme or category of complexity. Consider required-state dependencies (creators before consumers), where complexity is concentrated, and what makes a coherent slice for review.
+
+---
+
+## An Interaction
+
+A single meaningful exchange between two actors that results in either:
+- A meaningful **retrieval** of state, OR
+- A meaningful **change** of state
+
+**Each interaction includes:**
+- **Actor** (Initiating) ΓÇö who starts the exchange
+- **Supporting** ΓÇö who responds (typically a system, subsystem or component)
+- **State Concepts** ΓÇö domain concepts involved
+- **Required State** ΓÇö preconditions, what must be true from a state perspective
+- **Initiation** ΓÇö what the initiating actor does (verb-noun)
+- **Response** ΓÇö what the supporting actor does (behavior only; no state language)
+- **Resulting State** ΓÇö what must be true afterward (state only; no action language)
+- **Failure Modes** ΓÇö how the exchange can fail (max 3, rule/state based)
+
+---
+
+## State Concept
+
+A domain concept that holds state and can be operated on. It is defined in the State Model and scoped to the Epic or Story that owns it.
+
+**Each State Concept includes:**
+- **Concept name** ΓÇö optionally `: BaseConcept` if it extends another
+- **Properties** ΓÇö state the concept holds; `<type> property` (e.g., `Number balance`, `LineItem[] line-items`)
+- **Collaborating concepts** ΓÇö other concepts this property works with or depends on (optional, listed under the property)
+- **Invariant** ΓÇö constraint on a property; when an invariant applies to a single property, state it under that property
+- **Operations** ΓÇö what can be done to the concept; `<return type> operation(<params>)` (e.g., `debit(Amount): Transaction`, `addItem(Book, Quantity): LineItem`)
+- **Collaborating concepts** ΓÇö other concepts this operation works with or depends on (optional, listed under the operation)
+- **Invariant** ΓÇö constraint on an operation; when an invariant applies to a single operation, state it under that operation
+
+**Relationship between Interactions and State Concepts:**
+- Interactions **reference** State Concepts in their Required State, State Concepts field, and Resulting State
+- **Required State** describes what must be true of the State Concepts before the interaction (e.g., Account status = active)
+- **Resulting State** describes what becomes true of the State Concepts after the interaction (e.g., Shopping Cart: empty ΓåÆ has-items)
+- **Response** (behavior) operates on State Concepts; the operations defined in State Concepts are what the supporting actor performs
+- **Workflow:** Start with interactions ΓåÆ identify which concepts are touched ΓåÆ model them in the State Model; scope each concept to the Epic or Story that owns it
+
+---
+

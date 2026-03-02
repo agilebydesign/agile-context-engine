@@ -2,7 +2,7 @@
   "skill_space_path": null,
   "skills": ["skills/ace-build", "skills/ace-shaping"],
   "skills_config": {
-    "order": ["ace-build", "ace-shaping"]
+    "order": ["skills/ace-build", "skills/ace-shaping"]
   },
   "constraints": []
 }

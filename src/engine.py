@@ -3,15 +3,65 @@ Agile Context Engine — defines skill structure, scaffold, and build.
 Engine for building and running skills in their entirety.
 All structural logic lives here. Skill scripts are thin entry points.
 """
+import json
 from pathlib import Path
 from typing import Any
+
+from .config import AceConfig
+from .ace_skill import AceSkill
+
+
+def _default_engine_root() -> Path:
+    """Resolve engine root (parent of src/)."""
+    return Path(__file__).resolve().parent.parent
 
 
 class AgileContextEngine:
     """Engine for building and running skills in their entirety."""
 
     def __init__(self, engine_root: str | Path | None = None):
-        self.engine_root = Path(engine_root).resolve() if engine_root else None
+        self.engine_root = Path(engine_root).resolve() if engine_root else _default_engine_root()
+        self.config_path = self.engine_root / "conf" / "ace-config.json"
+        self.workspace_path: Path | None = None
+        self.strategy_path: Path | None = None
+        self.context_paths: list[Path] = []
+        self.skills: list[AceSkill] = []
+
+    def load(self) -> "AgileContextEngine":
+        """Load config; load skills; inject self into each skill."""
+        if not self.config_path.exists():
+            raise FileNotFoundError(f"Config not found: {self.config_path}")
+        data = json.loads(self.config_path.read_text(encoding="utf-8"))
+        config = AceConfig.model_validate(data)
+        if config.skill_space_path:
+            self.workspace_path = Path(config.skill_space_path).resolve()
+            self._update_strategy_path()
+        order = (config.skills_config or {}).get("order", config.skills)
+        self.skills = []
+        for rel_path in order:
+            skill_path = (self.engine_root / rel_path).resolve()
+            if skill_path.exists():
+                skill = AceSkill(skill_path, engine=self)
+                skill.rule_set.load()
+                self.skills.append(skill)
+        return self
+
+    def set_workspace(self, path: str | Path) -> Path:
+        """Set workspace; persist to config; create output dirs for each skill."""
+        self.workspace_path = Path(path).resolve()
+        if not self.workspace_path.exists():
+            self.workspace_path.mkdir(parents=True, exist_ok=True)
+        self._persist_config()
+        self._create_output_dirs()
+        self._update_strategy_path()
+        return self.workspace_path
+
+    def get_skill(self, name: str) -> AceSkill | None:
+        """Get skill by name (e.g. ace-shaping)."""
+        for s in self.skills:
+            if s.path.name == name or name in str(s.path):
+                return s
+        return None
 
     def get_skill_scaffold_spec(self) -> dict[str, Any]:
         """Returns canonical ace-skill structure."""
@@ -25,14 +75,49 @@ class AgileContextEngine:
         """Assembles content into AGENTS.md."""
         return build_skill(skill_path, engine_root=self.engine_root)
 
+    def _persist_config(self) -> None:
+        """Write skill_space_path to config."""
+        data = json.loads(self.config_path.read_text(encoding="utf-8"))
+        data["skill_space_path"] = str(self.workspace_path)
+        self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    def _create_output_dirs(self) -> None:
+        """Create <workspace>/ace-output/<skill-name>/ for each registered skill."""
+        if not self.workspace_path:
+            return
+        output_root = self.workspace_path / "ace-output"
+        output_root.mkdir(parents=True, exist_ok=True)
+        for skill in self.skills:
+            skill_name = skill.path.name
+            (output_root / skill_name).mkdir(parents=True, exist_ok=True)
+            (output_root / skill_name / "story").mkdir(parents=True, exist_ok=True)
+            (output_root / skill_name / "slice-1").mkdir(parents=True, exist_ok=True)
+
+    def _update_strategy_path(self) -> None:
+        """Set strategy_path from workspace when ace-shaping output exists."""
+        if not self.workspace_path:
+            self.strategy_path = None
+            return
+        # Default: <workspace>/ace-output/ace-shaping/story/shaping-strategy.md
+        candidates = [
+            self.workspace_path / "ace-output" / "ace-shaping" / "story" / "shaping-strategy.md",
+            self.workspace_path / "docs" / "shaping-strategy.md",
+        ]
+        for p in candidates:
+            if p.exists():
+                self.strategy_path = p
+                return
+        # Even if not exists, caller may create it — point to default location
+        self.strategy_path = candidates[0]
+
 
 # Content files in order for assembly
 CONTENT_ORDER = [
-    "core-definitions.md",
-    "intro.md",
-    "output-structure.md",
+    "shaping-core.md",
     "shaping-process.md",
-    "validation.md",
+    "shaping-strategy.md",
+    "shaping-output.md",
+    "shaping-validation.md",
 ]
 
 # Optional content for skills with scripts
@@ -47,13 +132,13 @@ def get_skill_scaffold_spec() -> dict[str, Any]:
     return {
         "content_files": CONTENT_ORDER + [SCRIPT_INVOCATION],
         "dirs": ["content", "rules", "scripts"],
-        "root_files": ["SKILL.md", "README.md", "metadata.json"],
+        "root_files": ["SKILL.md", "README.md", "skill-config.json"],
         "content_templates": {
-            "core-definitions.md": "# Core Definitions\n\n",
-            "intro.md": "# Intro\n\n",
-            "output-structure.md": "# Output Structure\n\n",
+            "shaping-core.md": "# Core Definitions\n\n",
             "shaping-process.md": "# Shaping Process\n\n",
-            "validation.md": "# Validation\n\n",
+            "shaping-strategy.md": "# Shaping Strategy\n\n",
+            "shaping-output.md": "# Output Structure\n\n",
+            "shaping-validation.md": "# Validation\n\n",
             "script-invocation.md": "# Script Invocation\n\nHow to call scripts (params, when, what to expect).\n",
         },
         "rules_default": {"scanners": []},
@@ -118,11 +203,11 @@ def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None =
             encoding="utf-8",
         )
 
-    # Create metadata.json
-    metadata = path / "metadata.json"
-    if not metadata.exists():
+    # Create skill-config.json
+    skill_config = path / "skill-config.json"
+    if not skill_config.exists():
         import json
-        metadata.write_text(
+        skill_config.write_text(
             json.dumps({"name": name, "version": "0.1.0"}, indent=2),
             encoding="utf-8",
         )
@@ -133,7 +218,7 @@ def scaffold_skill(name: str, path: str | Path, engine_root: str | Path | None =
 def build_skill(skill_path: str | Path, engine_root: str | Path | None = None) -> Path:
     """
     Assembles content/*.md into AGENTS.md per engine conventions.
-    Order: core-definitions, intro, output-structure, shaping-process, validation.
+    Order: shaping-core, shaping-process, shaping-strategy, shaping-output, shaping-validation.
     """
     skill_path = Path(skill_path)
     if not skill_path.is_absolute() and engine_root:

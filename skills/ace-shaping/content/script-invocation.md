@@ -14,4 +14,4 @@ cd skills/ace-shaping
 python scripts/build.py
 ```
 
-**Output:** Writes `AGENTS.md` with merged content in order: core-definitions, intro, output-structure, shaping-process, validation.
+**Output:** Writes `AGENTS.md` with merged content in order: shaping-core, shaping-process, shaping-strategy, shaping-output, shaping-validation.
