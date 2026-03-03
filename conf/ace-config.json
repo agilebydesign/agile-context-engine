@@ -6,13 +6,15 @@
   "skills": [
     "skills/agile-skill-build",
     "skills/ace-shaping",
-    "skills/ace-context-to-memory"
+    "skills/ace-context-to-memory",
+    "skills/ace-proposal-respond"
   ],
   "skills_config": {
     "order": [
       "skills/agile-skill-build",
       "skills/ace-shaping",
-      "skills/ace-context-to-memory"
+      "skills/ace-context-to-memory",
+      "skills/ace-proposal-respond"
     ]
   },
   "constraints": []

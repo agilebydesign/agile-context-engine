@@ -41,7 +41,7 @@ class Instructions:
         if context:
             parts.insert(0, context + "\n\n---\n\n")
 
-        if operation in ("generate_slice", "improve_strategy") and self.engine.strategy_path:
+        if operation in ("generate_slice", "improve_strategy", "answer_questions", "proceed_slice") and self.engine.strategy_path:
             if self.engine.strategy_path.exists():
                 strategy_content = self.engine.strategy_path.read_text(encoding="utf-8").strip()
                 parts.append("## Strategy Document\n\n")
@@ -54,7 +54,7 @@ class Instructions:
         return list(self.operation_sections.get(operation, []))
 
     def _get_section_content(self, section_id: str, content_dir: Path) -> str:
-        if section_id == "shaping.validation.rules":
+        if section_id.endswith(".validation.rules"):
             rules_dir = self.skill_path / "rules"
             if not rules_dir.exists():
                 return ""

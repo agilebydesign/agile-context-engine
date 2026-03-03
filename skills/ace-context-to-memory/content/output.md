@@ -4,7 +4,6 @@
 
 - **Convert**: `memory/<name>/<rel>/converted/` (markdown + images)
 - **Chunk**: `memory/<name>/<rel>/chunked/` (chunked markdown)
-- **Organize**: `memory/<name>/chunked/` (hierarchical markdown for Excel story maps)
 
 ## Pipeline Mode (single-folder)
 

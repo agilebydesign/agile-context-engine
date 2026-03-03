@@ -95,6 +95,7 @@ class AgileContextEngine:
             self.strategy_path = None
             return
         candidates = [
+            self.workspace_path / "response" / "strategy.md",  # ace-proposal-respond
             self.workspace_path / "shaping" / "strategy.md",
             self.workspace_path / "docs" / "strategy.md",
         ]

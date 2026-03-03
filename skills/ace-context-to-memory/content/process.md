@@ -25,12 +25,6 @@
 - Other docs (>200 lines): Split at `#` or `##` boundaries
 - Small files (<200 lines): Kept as single chunk
 
-## Step 2b: Organize Excel Story Maps (optional)
-
-- Parses: Category (Epic) → Capability → System → Notes
-- Outputs: One markdown file per Epic with `##` Capability, `###` System, `-` notes
-- Writes to: `memory/<name>/chunked/`
-
 ## Step 3: Sync Workspace to Memory (full pipeline)
 
 **Story: Sync workspace to memory (convert + copy + chunk)**
