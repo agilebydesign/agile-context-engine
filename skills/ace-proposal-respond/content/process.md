@@ -19,6 +19,12 @@ Respond to a client proposal by converting materials to memory, creating a strat
 
 - **Strategy:** `response/strategy.md`
 - **Response artifacts:** `response/` (symlinked)
+- **Accelerator Table:** `Accelerator Table.md` (or alongside response md); updated in real time when answers reference appendix
+
+<!-- section: proposal.process.accelerators -->
+## Accelerators
+
+When answers reference `*See Appendix X (Name)*`, define the accelerator and accumulate it in the **Accelerator Table** immediately. Add or update row: Appendix letter, framework name, slide file, slide numbers, URL. Keep URLs in table. When done, run `build_appendix_deck.py --table <path> [--output <path>]` to assemble the appendix deck.
 
 <!-- section: proposal.process.post_strategy.review -->
 ## Corrections

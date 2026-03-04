@@ -1,140 +1,148 @@
 # Core Definitions
 
 <!-- section: proposal.core.definitions -->
-## State Concepts (Proposal Response)
+## Concepts
 
-- **ProposalSource** — Client RFP, Q&A, requirements, or other proposal materials (PDF, PPTX, DOCX, XLSX, etc.)
-- **Memory** — Converted and chunked content from proposal sources; searchable via RAG
-- **ResponseFolder** — Output area where response artifacts live; created alongside proposal material; symlinked from project
-- **Strategy** — Response plan: question coverage, priorities, assumptions, slice order
-- **Workspace** — Root path containing proposal sources and response output
+- **ProposalSource** — Client RFP, Q&A, requirements (PDF, PPTX, DOCX, XLSX, etc.)
+- **Memory** — Converted and chunked content; searchable via RAG (ace-context-to-memory)
+- **ResponseFolder** — Output area for response artifacts; created alongside proposal material; symlinked from project
+- **Strategy** — Response plan: which questions, in what order, format guidance, DO/DO NOT corrections
+- **Accelerator** — A lettered appendix reference (A, B, C, …) that answers cite; typically a framework, method, or approach with source slides. Defined by appendix letter and framework name.
+- **Accelerator Table** — Markdown table that defines and accumulates accelerators: appendix letter, framework name, slide file, slide numbers, URL. Each answer reference adds or updates a row; built in real time.
 
-## Epic: Respond to Client Proposal
+## What This Skill Does
 
-- **Actor**: Proposal author
-- **Supporting**: ace-proposal-respond, ace-context-to-memory
-- **Required State**: Workspace with proposal sources (RFP, Q&A, requirements)
-- **Initiation**: Author requests proposal response (convert to memory, create strategy, answer questions)
-- **Response**: Skill converts sources to memory; creates response folder; proposes strategy; answers questions using RAG; iterates on strategy
-- **Resulting State**: Strategy approved; answers drafted; response artifacts in response folder
+- Convert proposal material to memory (via ace-context-to-memory)
+- Create response folder and symlink
+- Propose a strategy (question coverage, order, format)
+- Answer questions using memory RAG
+- **Define and accumulate accelerators** — When answers reference `*See Appendix X (Name)*`, define the accelerator (appendix letter, framework name) and accumulate it in the Accelerator Table with slide file, slide numbers, and URL. Each reference adds or updates a row.
+- **Correct** — When user says "correct," add DO/DO NOT to the strategy document; re-run
+
+## Pattern from Shaping (what we reuse)
+
+- **Inject prompt** — Instructions are assembled per operation and injected into the AI prompt
+- **Strategy** — A strategy document (`response/strategy.md`) holds the plan and accumulated corrections
+- **Correct** — Corrections go into the strategy (DO/DO NOT with wrong/correct examples); do not just fix the answer in place
 
 ## Dependency: ace-context-to-memory
 
-This skill depends on ace-context-to-memory for:
-- Converting proposal documents to markdown and chunks
-- Indexing chunks for semantic search (RAG)
-- Running `search_memory "<query>"` when answering questions
-
-Run `index_memory.py --path <proposal_source>` or `--memory <name>` before answering questions. Use `search_memory.py "<query>"` to retrieve relevant chunks.
+- Convert documents to markdown and chunks
+- Index for semantic search
+- Run `search_memory "<query>"` when answering questions
 
 ---
 
 # Process Overview
 
 <!-- section: proposal.process.intro -->
-Your task is to **respond to a client proposal** — RFP, Q&A, requirements — by converting materials to memory, creating a response strategy, and answering questions iteratively. Work in small batches: strategy first, then answer a few questions, then iterate.
+Respond to a client proposal by converting materials to memory, creating a strategy, and answering questions. Work in small batches. **Correct** means add DO/DO NOT to the strategy—do not just fix the answer.
 
-**You MUST follow this process before producing any output.**
-
-1. **Setup** — Convert proposal material to memory (ace-context-to-memory); create response folder; symlink to project.
-2. **Strategy Phase first** — Analyze all documents; propose response plan (question coverage, priorities, assumptions, slice order). Save strategy. Do not answer questions until strategy is approved.
-3. **Answer a few questions ONLY** — Use memory RAG to answer 3–5 questions per batch. Get user approval.
-4. **Iterate** — Corrections → add DO/DO NOT to strategy; proceed to next batch or expand scope.
+1. **Setup** — Convert to memory; create response folder; symlink.
+2. **Strategy first** — Analyze documents; propose response plan; save to `response/strategy.md`. Get approval.
+3. **Answer a few questions** — Use memory RAG. 3–5 per batch. Get approval.
+4. **Iterate** — Corrections → add DO/DO NOT to strategy; re-run or proceed.
 
 ### When the user says
 
-- "Create strategy," "propose response plan," "analyze and plan" → Run **create_strategy**
-- "Answer questions," "answer a few," "next batch" → Run **answer_questions** (few questions only)
-- "Correct," "fix that," "wrong" → Run **improve_strategy** (add DO/DO NOT to strategy; re-run)
-- "Proceed," "expand," "next slice" → Run **proceed_slice** (expand scope or next batch)
+- "Create strategy," "propose plan" → **create_strategy**
+- "Answer questions," "next batch" → **answer_questions**
+- "Correct," "fix that," "wrong" → **improve_strategy** (add DO/DO NOT to strategy; re-run)
+- "Proceed," "expand" → **proceed_slice**
 
 ### Output Paths
 
-- **Strategy:** `<workspace>/response/strategy.md` or `<proposal_folder>/response/strategy.md`
-- **Response artifacts:** `<proposal_folder>/response/` (symlinked to project)
-- **Memory:** Via ace-context-to-memory (chunks, index)
+- **Strategy:** `response/strategy.md`
+- **Response artifacts:** `response/` (symlinked)
+- **Accelerator Table:** `Accelerator Table.md` (or alongside response md); updated in real time when answers reference appendix
 
-### Before You Produce Output
+<!-- section: proposal.process.accelerators -->
+## Accelerators
 
-**STOP.** Before answering any questions, you MUST:
-
-1. [ ] Convert proposal material to memory (index_memory or convert + chunk)
-2. [ ] Create response folder and symlink
-3. [ ] Complete Strategy Phase (analyze, propose plan, save strategy)
-4. [ ] Get user approval of the strategy
-5. [ ] Answer only 3–5 questions per batch; get approval before continuing
+When answers reference `*See Appendix X (Name)*`, define the accelerator and accumulate it in the **Accelerator Table** immediately. Add or update row: Appendix letter, framework name, slide file, slide numbers, URL. Keep URLs in table. When done, run `build_appendix_deck.py --table <path> [--output <path>]` to assemble the appendix deck.
 
 <!-- section: proposal.process.post_strategy.review -->
-## Post-Strategy Review
+## Corrections
 
-When user says "correct" or provides feedback that implies a reusable rule: add a **DO** or **DO NOT** to the strategy document with wrong/correct examples. Re-run the current batch until approved. Do not proceed until user approves.
+When user says "correct" or feedback implies a reusable rule: add **DO** or **DO NOT** to the strategy with wrong/correct examples. Re-run until approved.
 
 ---
 
 # Strategy Phase
 
+<!-- section: proposal.strategy.starting -->
+## Common Response Instructions (Starting Template)
+
+Include in `response/strategy.md` as baseline. Adapt per RFP.
+
+**Structure:** Lead paragraph → bulleted list with **Bold labels** → source references.
+
+**Lead paragraph — DO:** Articulate outcomes in the client's language. "Our firm would aim to accomplish [concrete outcomes]." "We will achieve these outcomes through:"
+
+**Lead paragraph — DON'T:** Do not restate the question generically.
+
+**Bullet prose — DO:** Explain method and mechanism. 2–3 substantive sentences per bullet.
+
+**Bullet prose — DON'T:** Do not use "We will [verb]... to achieve [outcome]" for every bullet. Explain *how*.
+
+**Bullet labels — DO:** Use approach/method names. Name what we do, not the output.
+
+**Tailoring — DO:** Connect each bullet to the specific question. Use the question's language.
+
+See `rules/response-format.md` for full DO/DO NOT. Add project-specific corrections as you iterate.
+
 <!-- section: proposal.strategy.phase -->
-1. **Analyze the proposal sources** to determine question coverage, dependencies, and complexity.
-2. **Present the strategy** to the user. Include: question/requirement breakdown, proposed response order, assumptions, priorities, **proposed slice order** (which questions to answer first).
-3. **Validate until reasonable** — User reviews; refine until approved. Do not answer questions until then.
-4. **Save the strategy** to `<response_folder>/strategy.md`.
+1. **Analyze** the proposal sources — question coverage, priorities, assumptions.
+2. **Present** the strategy — which questions, in what order, format guidance.
+3. **Validate** — User reviews; refine until approved.
+4. **Save** to `response/strategy.md`.
 
 <!-- section: proposal.strategy.criteria -->
 ## Strategy Criteria
 
-### 1 - Question Coverage
+**Tone** — Voice, formality, perspective (e.g. aspirational, direct, collaborative).
 
-Map each client question or requirement to:
-- Source document and section
-- Dependencies (e.g. Supplier Q&A answers needed before certain sections)
-- Priority (high/medium/low)
-- Assumptions when information is missing
+**Level of detail** — How deep per question (full answer, draft, placeholder; technical vs executive).
 
-### 2 - Slice Order
+**Audience** — Who reads this (evaluators, technical reviewers, executives); tailor accordingly.
 
-Answer questions in batches of 3–5. Proposed order:
-- **Dependency-first** — Questions that unblock others first
-- **High-priority** — Client-critical sections
-- **Value slice** — Sections that demonstrate capability early
-- **Risk slice** — Sections with most uncertainty or assumptions
-
-State your slice order and reasoning so the user can adjust.
-
-### 3 - Depth
-
-Decide per batch:
-- **Full answer** — Complete response with citations
-- **Draft** — Outline or bullet points for review
-- **Placeholder** — "To be completed after Q&A" or similar
-
-Document in the strategy what is in scope per slice.
+**References or examples to speak to** — Which sources, case studies, or prior work to cite; what evidence to invoke.
 
 <!-- section: proposal.strategy.slices.running -->
-## Running Slices
+## Running Batches
 
-1. **Run the first batch** — Answer 3–5 questions for Batch 1. User reviews and corrects.
-2. **Corrections → strategy** — When a mistake is found, add a **DO** or **DO NOT** to the strategy document. Each correction must include:
-   - The **DO** or **DO NOT** rule
-   - **Example (wrong):** What was done incorrectly
-   - **Example (correct):** What it should be after the fix
-   - If it is the second (or later) time failing on the same guidance, add an extra example to the existing DO/DO NOT block
-   - Re-run the batch until the user approves
-3. **Next batch** — Proceed to the next batch. Repeat for each batch.
-4. **Expand scope** — At any point, user may expand (more questions) or narrow (fewer). Update strategy and continue.
-5. **Correct** — "Correct" means correct the strategy (add DO/DO NOT); do not just fix the answer in place.
+1. **Answer 3–5 questions** — User reviews and corrects.
+2. **Corrections → strategy** — Add DO/DO NOT with wrong/correct examples. Re-run until approved.
+3. **Proceed** — Next batch or expand scope.
+4. **Correct** — "Correct" means correct the strategy; do not just fix the answer in place.
 
 <!-- section: proposal.strategy.corrections -->
 ## Corrections Format
 
-When adding corrections to the strategy document, each **DO** or **DO NOT** must include:
-- The **DO** or **DO NOT** rule
+Each **DO** or **DO NOT** must include:
+- The rule
 - **Example (wrong):** What was done incorrectly
-- **Example (correct):** What it should be after the fix
-- If it is the second (or later) time failing on the same guidance, add an extra example to the existing DO/DO NOT block
+- **Example (correct):** What it should be
 
-Re-run the batch until the user approves.
+Re-run until the user approves.
 
-When answering questions, **use memory RAG** — run `search_memory "<query>"` and cite retrieved chunks. Do not answer from general knowledge when proposal content exists in memory.
+**Use memory RAG** — Run `search_memory "<query>"` and cite retrieved chunks when answering.
+
+**Optional: index our work** — After each batch (or when strategy changes), run `index_memory --path response/` so subsequent answers can reference prior work and corrections.
+
+<!-- section: proposal.strategy.accelerators -->
+## Accelerators (Lettered Appendix)
+
+Answers may refer to accelerators — typically `*See Appendix X (Full Name)*` at the end of bullets. The author (or AI) may suggest an accelerator when a framework, method, or approach warrants a slide appendix.
+
+**Define and accumulate in real time** — When writing or revising answers, define each referenced accelerator (appendix letter, framework name) and accumulate it in the **Accelerator Table** (e.g. `Accelerator Table.md`). Add or update a row with slide file, slide numbers, and URL. The table grows as answers are written. Keep URLs in the table for now.
+
+**Table format:**
+| Appendix | Framework Name | Slide File | Slide Numbers | Url |
+|----------|----------------|------------|---------------|-----|
+| **A** | Lean Change | Lean Change Approach Slides.pptx | **1, 2** | [Link](url) |
+
+**When done** — Run `build_appendix_deck.py` (or project-specific script) to assemble the appendix deck from the table. Default output: derived from the table md name (e.g. `Accelerator Table.md` → `Appendix_Accelerators.pptx`). Override with `--output <path>`.
 
 ---
 
@@ -142,25 +150,27 @@ When answering questions, **use memory RAG** — run `search_memory "<query>"` a
 
 ## Response Folder
 
-- **Location:** `<proposal_folder>/response/` (e.g. `workspace/jbom response/response/`)
-- **Symlink:** Project folder has symlink/junction to response folder (e.g. `response` → `workspace/jbom response/response`)
-- **Contents:**
-  - `strategy.md` — Response plan, assumptions, slice order, DO/DO NOT corrections
-  - `batch-N/` — Per-batch answers (optional; or single `answers.md`)
+- **Location:** `<proposal_folder>/response/`
+- **Symlink:** Project has `response` → proposal response folder
+- **Contents:** `strategy.md`, answers (per batch or single file), `Accelerator Table.md` (when accelerators are used)
 
-## Strategy Document Format
+## Accelerator Table
+
+- **Location:** Same folder as response md (e.g. `workspace/jbom response/Accelerator Table.md`) or `response/Accelerator Table.md`
+- **Format:** Markdown table with columns: Appendix | Framework Name | Slide File | Slide Numbers | Url
+- **Define and accumulate:** In real time as answers reference `*See Appendix X (Name)*`; add or update rows with slide file, numbers, URL
+- **Build:** Run `build_appendix_deck.py` when done to assemble appendix deck; default output derived from table path, or `--output <path>`
+
+## Strategy Document
 
 ```markdown
 # Response Strategy: [Proposal Name]
 
 ## Question Coverage
-| # | Question/Requirement | Source | Priority | Assumptions |
-|---|----------------------|--------|----------|-------------|
+[Which questions, source, priority]
 
-## Slice Order
-1. Batch 1: [questions]
-2. Batch 2: [questions]
-...
+## Order
+[Which to answer first]
 
 ## DO / DO NOT (from corrections)
 - **DO** — [rule]
@@ -171,43 +181,41 @@ When answering questions, **use memory RAG** — run `search_memory "<query>"` a
 <!-- section: proposal.output.answer_format -->
 ## Answer Format
 
-Each answer should:
-- Cite source (document, section, slide/page) from memory
-- Use `search_memory "<query>"` to retrieve relevant chunks before drafting
-- Follow Content Voice rules (Agile by Design perspective) when applicable
+- Use `search_memory "<query>"` before drafting
+- Cite source (document, section, slide/page)
+- Follow Content Voice when applicable
 
 ---
 
 # Validation
 
-## Pre-Strategy Checklist
+## Pre-Strategy
 
-- [ ] Proposal material converted to memory (chunks + index)
+- [ ] Proposal material in memory
 - [ ] Response folder created
-- [ ] Symlink from project to response folder exists
-- [ ] Strategy saved to `response/strategy.md`
+- [ ] Symlink exists
 
 <!-- section: proposal.validation.pre_answer -->
-## Pre-Answer Checklist
+## Pre-Answer
 
-- [ ] Strategy approved by user
-- [ ] Batch size is 3–5 questions only
-- [ ] `search_memory` used for each question before drafting
-- [ ] Sources cited (path, slide/page)
+- [ ] Strategy approved
+- [ ] 3–5 questions per batch
+- [ ] `search_memory` used
+- [ ] Sources cited
 
 <!-- section: proposal.validation.correction -->
-## Correction Checklist
+## Correction
 
 When user says "correct":
-- [ ] DO or DO NOT added to strategy with wrong/correct examples
-- [ ] Batch re-run with corrected guidance
+- [ ] DO or DO NOT added to strategy with examples
+- [ ] Re-run with corrected guidance
 - [ ] User approval before proceeding
 
 ---
 
 # Script Invocation
 
-Run from workspace root (abd_content or agile-context-engine). Set `CONTENT_MEMORY_ROOT` if workspace differs from cwd.
+Run from workspace root. Set `CONTENT_MEMORY_ROOT` if workspace differs from cwd.
 
 ## setup_response.py
 
@@ -217,7 +225,7 @@ Creates response folder and symlink for proposal response workflow.
 
 **Usage:**
 ```bash
-python .agents/skills/ace-proposal-respond/scripts/setup_response.py --proposal <proposal_folder> [--project <project_root>]
+python skills/ace-proposal-respond/scripts/setup_response.py --proposal <proposal_folder> [--project <project_root>]
 ```
 
 **Parameters:**
@@ -226,7 +234,7 @@ python .agents/skills/ace-proposal-respond/scripts/setup_response.py --proposal 
 
 **Example:**
 ```bash
-python .agents/skills/ace-proposal-respond/scripts/setup_response.py --proposal "workspace/jbom response"
+python skills/ace-proposal-respond/scripts/setup_response.py --proposal "workspace/jbom response"
 ```
 
 **Output:** Creates `<proposal_folder>/response/` and symlink `<project_root>/response` → response folder.
@@ -239,18 +247,53 @@ Convert proposal material to memory and index for RAG. Run before answering ques
 
 **link_workspace_source.py** — Link proposal folder to source (if not already):
 ```bash
-python .agents/skills/ace-context-to-memory/scripts/link_workspace_source.py --path "workspace/jbom response" --name "JBOM"
+python skills/ace-context-to-memory/scripts/link_workspace_source.py --path "workspace/jbom response" --name "JBOM"
 ```
 
 **index_memory.py** — Full pipeline (convert → chunk → embed):
 ```bash
-python .agents/skills/ace-context-to-memory/scripts/index_memory.py --path "source/JBOM"
+python skills/ace-context-to-memory/scripts/index_memory.py --path "source/JBOM"
 ```
 
 **search_memory.py** — Semantic search when answering questions:
 ```bash
-python .agents/skills/ace-context-to-memory/scripts/search_memory.py "<query>" --k 5
+python skills/ace-context-to-memory/scripts/search_memory.py "<query>" --k 5
 ```
+
+---
+
+## build_appendix_deck.py
+
+Assembles the appendix deck from the Accelerator Table. Run when response is done and accelerators have been accumulated.
+
+**When to call:** After completing answers that reference accelerators; when ready to produce the appendix PowerPoint.
+
+**Usage:**
+```bash
+python skills/ace-proposal-respond/scripts/build_appendix_deck.py --table <accelerator_table_path> [--output <pptx_path>]
+```
+
+**Parameters:**
+- `--table` (required): Path to Accelerator Table.md (e.g. `workspace/jbom response/Accelerator Table.md`)
+- `--output` (optional): Output PPTX path. Default: derived from table path (e.g. `Appendix_Accelerators.pptx` in same folder)
+
+**Example:**
+```bash
+python skills/ace-proposal-respond/scripts/build_appendix_deck.py --table "workspace/jbom response/Accelerator Table.md"
+python skills/ace-proposal-respond/scripts/build_appendix_deck.py --table "workspace/jbom response/Accelerator Table.md" --output "workspace/jbom response/JBOM_Appendix_Accelerators.pptx"
+```
+
+**Config:** Create `appendix_config.json` in the table's directory:
+```json
+{
+  "style_deck": "path/to/PO_Training.pptx",
+  "onedrive_root": "C:/Users/.../OneDrive - Org/Shared Documents/Assets",
+  "search_roots": ["path/to/Agile Thinking", "path/to/Client Engagements"]
+}
+```
+Or set `APPENDIX_STYLE_DECK`, `APPENDIX_ONEDRIVE_ROOT` env vars.
+
+**Note:** Project-specific builds (e.g. `build_jbom_appendix_deck.py`) may exist with hardcoded style deck and paths. The skill script is a generic entry point; extend or replace per project.
 
 ---
 

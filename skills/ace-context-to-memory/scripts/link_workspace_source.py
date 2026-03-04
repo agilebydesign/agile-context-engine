@@ -1,5 +1,5 @@
 """
-Link a folder into source/ (under workspace root) so skills can access it when adding to memory.
+Link a folder into abd_content/source/ so skills can access it when adding to memory.
 
 Usage:
   python link_workspace_source.py --path <folder_path> [--name <link_name>]
@@ -12,7 +12,7 @@ Creates a junction (Windows) or symlink (Unix) at:
 --workspace: Shorthand for workspace/<name>/source (workspace RFQ folders).
 --name: Link name under source/ (default: last component of target path).
 
-Run from workspace root, or set CONTENT_MEMORY_ROOT.
+Run from abd_content root, or set CONTENT_MEMORY_ROOT.
 
 Examples:
   python link_workspace_source.py --path "C:/docs/RFQ materials" --name "JBOM"

@@ -16,14 +16,14 @@ Run `search_memory "<query>"` when the user says:
 1. **Derive query** — Extract a semantic query from the user's question (topic, concept, or question).
 2. **Run search** — From workspace root:
    ```bash
-   python skills/ace-context-to-memory/scripts/search_memory.py "<query>" --k 5
+   python .agents/skills/ace-context-to-memory/scripts/search_memory.py "<query>" --k 5
    ```
 3. **Inject results** — Use the returned chunks in your response.
 4. **Cite sources** — Include path, slide/page when using retrieved content.
 
 ## Requirements
 
-- RAG deps: `pip install -r skills/ace-context-to-memory/requirements-rag.txt`
+- RAG deps: `pip install -r .agents/skills/ace-context-to-memory/requirements-rag.txt`
 - `OPENAI_API_KEY` set (for embeddings)
 - Index must exist: run `index_memory` after adding content
 

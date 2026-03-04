@@ -59,3 +59,17 @@ Re-run until the user approves.
 **Use memory RAG** — Run `search_memory "<query>"` and cite retrieved chunks when answering.
 
 **Optional: index our work** — After each batch (or when strategy changes), run `index_memory --path response/` so subsequent answers can reference prior work and corrections.
+
+<!-- section: proposal.strategy.accelerators -->
+## Accelerators (Lettered Appendix)
+
+Answers may refer to accelerators — typically `*See Appendix X (Full Name)*` at the end of bullets. The author (or AI) may suggest an accelerator when a framework, method, or approach warrants a slide appendix.
+
+**Define and accumulate in real time** — When writing or revising answers, define each referenced accelerator (appendix letter, framework name) and accumulate it in the **Accelerator Table** (e.g. `Accelerator Table.md`). Add or update a row with slide file, slide numbers, and URL. The table grows as answers are written. Keep URLs in the table for now.
+
+**Table format:**
+| Appendix | Framework Name | Slide File | Slide Numbers | Url |
+|----------|----------------|------------|---------------|-----|
+| **A** | Lean Change | Lean Change Approach Slides.pptx | **1, 2** | [Link](url) |
+
+**When done** — Run `build_appendix_deck.py` (or project-specific script) to assemble the appendix deck from the table. Default output: derived from the table md name (e.g. `Accelerator Table.md` → `Appendix_Accelerators.pptx`). Override with `--output <path>`.

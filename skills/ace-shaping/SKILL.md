@@ -11,6 +11,14 @@ metadata:
 
 Shape source material into an **Interaction Tree** and **State Model** — a story map and domain model. Contains 11 rules across 4 categories to guide shaping of requirements into epics, sub-epics, and stories with associated state concepts.
 
+## Source Folder Structure
+
+`abd_content/source/` contains content sources. Workspace RFQ folders are linked in for skill access:
+
+- `source/JBOM Agile Support` — Junction to `workspace/Scotia Talent Journey Based Operating Model/source` (RFQ docs, B&T, Supplier Q&A, etc.)
+
+Use this path when shaping from RFQ or JBOM source material.
+
 ## When to Apply
 
 Reference these guidelines when:

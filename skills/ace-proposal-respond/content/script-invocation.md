@@ -47,6 +47,41 @@ python .agents/skills/ace-context-to-memory/scripts/search_memory.py "<query>" -
 
 ---
 
+## build_appendix_deck.py
+
+Assembles the appendix deck from the Accelerator Table. Run when response is done and accelerators have been accumulated.
+
+**When to call:** After completing answers that reference accelerators; when ready to produce the appendix PowerPoint.
+
+**Usage:**
+```bash
+python .agents/skills/ace-proposal-respond/scripts/build_appendix_deck.py --table <accelerator_table_path> [--output <pptx_path>]
+```
+
+**Parameters:**
+- `--table` (required): Path to Accelerator Table.md (e.g. `workspace/jbom response/Accelerator Table.md`)
+- `--output` (optional): Output PPTX path. Default: derived from table path (e.g. `Appendix_Accelerators.pptx` in same folder)
+
+**Example:**
+```bash
+python .agents/skills/ace-proposal-respond/scripts/build_appendix_deck.py --table "workspace/jbom response/Accelerator Table.md"
+python .agents/skills/ace-proposal-respond/scripts/build_appendix_deck.py --table "workspace/jbom response/Accelerator Table.md" --output "workspace/jbom response/JBOM_Appendix_Accelerators.pptx"
+```
+
+**Config:** Create `appendix_config.json` in the table's directory:
+```json
+{
+  "style_deck": "path/to/PO_Training.pptx",
+  "onedrive_root": "C:/Users/.../OneDrive - Org/Shared Documents/Assets",
+  "search_roots": ["path/to/Agile Thinking", "path/to/Client Engagements"]
+}
+```
+Or set `APPENDIX_STYLE_DECK`, `APPENDIX_ONEDRIVE_ROOT` env vars.
+
+**Note:** Project-specific builds (e.g. `build_jbom_appendix_deck.py`) may exist with hardcoded style deck and paths. The skill script is a generic entry point; extend or replace per project.
+
+---
+
 ## build.py
 
 Assembles content into AGENTS.md.

@@ -32,6 +32,14 @@ Generalized guidance for proposal responses. Adapt per RFP; add project-specific
 
 **DON'T** — Do not tack on extra source names after the main reference. Do not mix appendix refs with inline citations in the same bullet unless the RFP format allows it.
 
+## Accelerators (Appendix References)
+
+**DO** — When referencing an accelerator, define it (appendix letter, framework name) and accumulate it in the **Accelerator Table** (e.g. `Accelerator Table.md`). Add or update a row with: Appendix letter, Framework Name, Slide File, Slide Numbers, URL. Keep URLs in the table.
+
+**DO** — Use `*See Appendix X (Full Name)*` at the end of bullets when the approach warrants a slide appendix.
+
+**DON'T** — Do not reference an appendix without adding it to the Accelerator Table. Do not omit the URL when available from memory or source links.
+
 ## Tailoring to the Question
 
 **DO** — Connect each bullet to the specific question. Use the question's language and intent. Tie methods to *what the question asks* (e.g. success → achieving, not just tracking; measurement → what we observe).
