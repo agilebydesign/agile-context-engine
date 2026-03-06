@@ -30,6 +30,14 @@ Converts source documents to markdown and chunks them for agent memory. Pipeline
 - **Folder**: When user says "folder", "all", "everything in X", or explicitly requests a folder → use `--memory <path>`.
 - **Do NOT** process entire folders when the user asked for a single file.
 
+## OneDrive Folder Clarification
+
+When the user refers to "OneDrive", "OneDrive folder", "slash OneDrive", or similar without specifying which OneDrive:
+
+- **Ask which OneDrive folder** they mean (e.g. "OneDrive - Agile by Design", "OneDrive - Personal", "OneDrive - Company Name").
+- If multiple OneDrive folders exist under the user's home and the configured path is missing or unclear, scripts will list them and prompt for choice — **do not guess**; ask the user to pick.
+- If the user's request is ambiguous (e.g. "use OneDrive" or "get to OneDrive"), ask: "Which OneDrive folder do you want to use? For example: OneDrive - Agile by Design, OneDrive - Personal, or another?"
+
 ## Source Folder Structure
 
 `source/` (under workspace root) contains content sources. Workspace folders can be linked for skill access:
@@ -62,17 +70,16 @@ See `content/rag-retrieval.md` for trigger phrases and agent flow.
 Run from workspace root. Scripts in `skills/ace-context-to-memory/scripts/`.
 
 **RAG (vector search):**
-- `index_memory.py --path <source_folder>` — full pipeline: convert → chunk → sync SharePoint → embed
-- `index_memory.py --memory <memory_name>` — chunk + embed (chunks already exist)
+- `index_memory.py --path <source_folder>` — full pipeline: convert → chunk → sync SharePoint → embed (or chunk + embed if convert already ran)
 - `index_memory.py --replace` — rebuild entire vector index from all memory
 - `search_memory.py "<query>" [--k 5] [--format text|json]` — semantic search; returns top-k chunks
 
 **Convert + chunk:**
 - `link_workspace_source.py --path <folder> [--name <link_name>]` or `--workspace <folder_name>` — **run on request** when adding content to memory; creates junction/symlink in `source/` so skills can access the folder
-- `convert_to_markdown.py --file <file_path>` — **single file only** (use when user asks for one file); creates `memory/<filename_stem>/` so all chunks stay in one place
+- `convert_to_markdown.py --file <file_path>` — **single file only** (use when user asks for one file); writes markdown alongside the source file (same folder)
 - `convert_to_markdown.py --memory <source_path>` — folder (all supported files). When source is in OneDrive, SharePoint URLs are auto-injected via `sharepoint_mapping.json`.
-- `chunk_markdown.py --memory <memory_name>`
-- `embed_and_index.py [--memory <name>] [--replace]` — embed chunks into FAISS index (called by index_memory)
+- `chunk_markdown.py --path <source_folder> [--memory <memory_name>]` — reads from source, writes to memory/<name>/
+- `embed_and_index.py [--memory <memory_name>] [--replace]` — embed chunks from memory/<name>/ into FAISS index (called by index_memory)
 - `sync_sharepoint_urls.py [--memory <memory_name>]` — run after chunk when source has `source/... | https://...`; replaces with SharePoint URL, fixes URL order, adds `wdSlideIndex` (pptx) / `page` (pdf) for direct links
 - `add_sharepoint_mapping.py --prefix "OneDrive - X" --base "<url>"` — add OneDrive→SharePoint mapping. Paste URL from browser; script derives base. Use when convert warns about missing mapping.
 

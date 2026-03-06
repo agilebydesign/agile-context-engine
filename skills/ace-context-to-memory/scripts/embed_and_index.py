@@ -8,7 +8,7 @@ Usage:
   python embed_and_index.py [--memory <memory_name>]
   python embed_and_index.py  # index all memory
 
-Run from workspace root. Reads memory/**/*.md (excludes converted/, images/).
+Run from workspace root. Reads chunked .md from memory/<name>/ (no chunked subfolder).
 Writes to data/rag/. Requires: pip install openai faiss-cpu numpy
 Set OPENAI_API_KEY environment variable.
 """
@@ -19,8 +19,9 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("CONTENT_MEMORY_ROOT", os.getcwd()))
-MEMORY = ROOT / "memory"
+from _config import ROOT, MEMORY, ensure_root
+
+ensure_root()
 RAG_DIR = ROOT / "data" / "rag"
 EMBEDDINGS_FILE = RAG_DIR / "embeddings.npy"
 METADATA_FILE = RAG_DIR / "metadata.json"
@@ -73,15 +74,16 @@ def _chunk_text_for_embed(text: str) -> str:
 
 
 def collect_chunks(memory_name: str | None) -> list[tuple[Path, str, dict]]:
-    """Collect all chunk files. Returns [(path, text, metadata), ...]."""
+    """Collect chunk files from memory folder. Returns [(path, text, metadata), ...].
+    Chunked files are in memory/<name>/*.md (no chunked subfolder).
+    """
     chunks = []
     base = MEMORY / memory_name if memory_name else MEMORY
     if not base.exists():
         return chunks
 
     for md_path in base.rglob("*.md"):
-        parts = md_path.parts
-        if "converted" in parts or "images" in parts:
+        if "images" in md_path.parts:
             continue
         try:
             text = md_path.read_text(encoding="utf-8")
@@ -91,7 +93,10 @@ def collect_chunks(memory_name: str | None) -> list[tuple[Path, str, dict]]:
         clean = _chunk_text_for_embed(text)
         if len(clean) < 20:
             continue
-        rel = md_path.relative_to(MEMORY)
+        try:
+            rel = md_path.relative_to(MEMORY)
+        except ValueError:
+            rel = md_path
         meta = {
             "source": source or str(rel),
             "path": str(rel),
@@ -242,6 +247,10 @@ def main():
         idx = sys.argv.index("--memory")
         if idx + 1 < len(sys.argv):
             memory_name = sys.argv[idx + 1]
+    if memory_name is None and "--path" in sys.argv:
+        idx = sys.argv.index("--path")
+        if idx + 1 < len(sys.argv):
+            memory_name = Path(sys.argv[idx + 1]).name
     replace = "--replace" in sys.argv
 
     chunks = collect_chunks(memory_name)

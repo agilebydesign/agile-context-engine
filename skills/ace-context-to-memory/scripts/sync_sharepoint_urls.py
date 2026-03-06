@@ -8,8 +8,9 @@ Sync SharePoint URLs in memory chunks. Run after chunk_markdown.
 4. Add &page=N to *__page_NN.md / *__section_NN.md with .pdf URLs
 
 Usage:
-  python scripts/sync_sharepoint_urls.py [--memory <name>]
+  python scripts/sync_sharepoint_urls.py [--memory <memory_name>]
 
+Operates on chunked .md files in memory/<memory_name>/. Run after chunk_markdown.
 Run from workspace root. Set CONTENT_MEMORY_ROOT if workspace root differs.
 """
 
@@ -18,8 +19,9 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("CONTENT_MEMORY_ROOT", Path.cwd()))
-MEMORY = ROOT / "memory"
+from _config import ROOT, MEMORY, ensure_root
+
+ensure_root()
 
 # 1. Replace source path with SharePoint URL
 SOURCE_PIPE_URL_RE = re.compile(
@@ -106,25 +108,18 @@ def main():
         if idx + 1 < len(sys.argv):
             memory_name = sys.argv[idx + 1]
 
-    if not MEMORY.exists():
-        print(f"Memory not found: {MEMORY}")
+    base = MEMORY / memory_name if memory_name else MEMORY
+    if not base.exists():
+        print(f"Memory path not found: {base}")
         sys.exit(1)
-
-    if memory_name:
-        base = MEMORY / memory_name
-        if not base.exists():
-            print(f"Memory folder not found: {base}")
-            sys.exit(1)
-        md_files = sorted(base.rglob("*.md"))
-    else:
-        md_files = sorted(MEMORY.rglob("*.md"))
+    md_files = sorted(base.rglob("*.md"))
 
     changed = 0
     for md in md_files:
         if update_file(md):
             changed += 1
             try:
-                print(md.relative_to(MEMORY))
+                print(md.relative_to(base))
             except ValueError:
                 print(md)
     print(f"\nSynced {changed} files with SharePoint URLs")

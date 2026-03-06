@@ -2,20 +2,19 @@
 Chunk converted markdown into smaller pieces for agent memory.
 
 Usage:
-  python chunk_markdown.py --memory <memory_name>
+  python chunk_markdown.py --path <source_folder> [--memory <memory_name>]
 
-Run from workspace root. Reads memory/<name>/*/converted/, writes memory/<name>/*/chunked/.
-Run convert_to_markdown.py first.
+Run from workspace root. Reads .md from source folder, writes chunked output to memory/<name>/ (no chunked subfolder).
+Run convert_to_markdown.py first. Excludes chunked output (__slide_, __section_) from input.
 """
 
 import re
 import sys
 from pathlib import Path
 
-import os
-ROOT = Path(os.environ["CONTENT_MEMORY_ROOT"]) if "CONTENT_MEMORY_ROOT" in os.environ else Path.cwd()
+from _config import ROOT, MEMORY, ASSETS, ensure_root
 
-MEMORY = ROOT / "memory"
+ensure_root()
 MIN_CHUNK_LINES = 5
 
 
@@ -95,6 +94,11 @@ def _is_slide_deck(text: str) -> bool:
     return bool(re.search(r"<!-- Slide number: \d+ -->", text))
 
 
+def _is_chunked_output(path: Path) -> bool:
+    """True if file is chunked output (__slide_NN, __section_NN)."""
+    return bool(re.search(r"__(?:slide|section|page)_\d+\.md$", path.name, re.IGNORECASE))
+
+
 def _extract_source_ref(text: str) -> tuple[str | None, str | None]:
     m = re.search(r"<!--\s*Source:\s*([^|]+)\s*\|\s*([^>]+)\s*-->", text)
     return (m.group(1).strip(), m.group(2).strip()) if m else (None, None)
@@ -144,27 +148,42 @@ def chunk_file(md_path: Path, conv_root: Path, chunk_root: Path) -> int:
     return written
 
 
-def _run_memory_mode(memory_name: str) -> None:
+def _run_path_mode(source_path: str, memory_name_override: str | None = None) -> None:
+    p = Path(source_path)
+    if p.is_absolute():
+        src_root = p
+    else:
+        under_assets = ASSETS / source_path
+        under_root = ROOT / source_path
+        if under_assets.exists():
+            src_root = under_assets
+        elif under_root.exists():
+            src_root = under_root
+        else:
+            print(f"Path not found: {source_path}")
+            return
+
+    memory_name = memory_name_override or src_root.name
     memory_root = MEMORY / memory_name
-    if not memory_root.exists():
-        print(f"Memory not found: {memory_root}")
-        return
 
     md_files = sorted(
-        f for f in memory_root.rglob("converted/*.md")
-        if f.parent.name == "converted" and "images" not in f.parts
+        f for f in src_root.rglob("*.md")
+        if "images" not in f.parts
+        and not _is_chunked_output(f)
     )
     if not md_files:
-        print(f"No markdown in {memory_root}/*/converted/")
+        print(f"No markdown in {src_root}")
         print("Run convert_to_markdown.py --memory <path> first.")
         return
 
-    print(f"Memory: {memory_name}  ({len(md_files)} files) -> chunked/\n")
+    print(f"Source: {src_root}  ({len(md_files)} files) -> memory/{memory_name}/\n")
     total = 0
     for i, f in enumerate(md_files, 1):
-        rel = f.parent.parent.relative_to(memory_root)
-        conv_root, chunk_root = f.parent, memory_root / rel / "chunked"
-        label = str(rel / f.name) if rel != Path(".") else f.name
+        conv_root = f.parent
+        rel_parent = f.parent.relative_to(src_root)
+        chunk_root = memory_root / rel_parent
+        rel = f.relative_to(src_root)
+        label = str(rel) if rel != Path(".") else f.name
         print(f"  [{i}/{len(md_files)}] {label} ... ", end="", flush=True)
         try:
             n = chunk_file(f, conv_root, chunk_root)
@@ -176,13 +195,23 @@ def _run_memory_mode(memory_name: str) -> None:
 
 
 def main():
+    path_arg = None
+    memory_arg = None
+    if "--path" in sys.argv:
+        idx = sys.argv.index("--path")
+        if idx + 1 < len(sys.argv):
+            path_arg = sys.argv[idx + 1]
     if "--memory" in sys.argv:
         idx = sys.argv.index("--memory")
         if idx + 1 < len(sys.argv):
-            _run_memory_mode(sys.argv[idx + 1])
-            return
-    print("Usage: python chunk_markdown.py --memory <memory_name>")
-    print("  memory_name: name of folder under memory/ (e.g. CBE)")
+            memory_arg = sys.argv[idx + 1]
+    if path_arg:
+        _run_path_mode(path_arg, memory_name_override=memory_arg)
+        return
+    if memory_arg:
+        _run_path_mode(memory_arg)
+        return
+    print("Usage: python chunk_markdown.py --path <source_folder> [--memory <memory_name>]")
 
 
 if __name__ == "__main__":

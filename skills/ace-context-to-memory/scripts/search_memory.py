@@ -14,7 +14,9 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("CONTENT_MEMORY_ROOT", os.getcwd()))
+from _config import ROOT, ensure_root
+
+ensure_root()
 RAG_DIR = ROOT / "data" / "rag"
 INDEX_FILE = RAG_DIR / "index.faiss"
 METADATA_FILE = RAG_DIR / "metadata.json"

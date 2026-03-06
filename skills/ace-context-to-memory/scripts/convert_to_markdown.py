@@ -9,7 +9,7 @@ Usage:
 When source is in OneDrive, SharePoint URLs are auto-injected from sharepoint_mapping.json
 so links work for anyone. Configure mappings in skills/ace-context-to-memory/sharepoint_mapping.json
 
-Run from workspace root. Creates memory/<name>/*/converted/ (markdown + images).
+Run from workspace root. Writes markdown alongside each source file (same folder).
 Requires: pip install "markitdown[all]"
 
 CRITICAL: Use --file when user asks for ONE file. Use --memory only when user
@@ -49,11 +49,9 @@ except ImportError:
     def extract_onedrive_prefix(p):
         return None
 
-# Workspace root: cwd (run from project root) or CONTENT_MEMORY_ROOT env
-ROOT = Path(os.environ["CONTENT_MEMORY_ROOT"]) if "CONTENT_MEMORY_ROOT" in os.environ else Path.cwd()
+from _config import ROOT, ASSETS, ensure_root
 
-MEMORY = ROOT / "memory"
-ASSETS = ROOT / "Assets"
+ensure_root()
 
 SUPPORTED = {
     ".pdf", ".pptx", ".docx", ".xlsx", ".xls",
@@ -187,17 +185,19 @@ def _run_file_mode(file_path: str) -> None:
         print(f"Unsupported format: {p.suffix}. Supported: {sorted(SUPPORTED)}")
         return
 
-    memory_name = p.stem or "memory"  # subfolder named after the file
-    rel_parent = Path(".")
-    out_root = MEMORY / memory_name
-    converted_dir = out_root / rel_parent / "converted"
-    chunked_dir = out_root / rel_parent / "chunked"
-    converted_dir.mkdir(parents=True, exist_ok=True)
-    chunked_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = p.parent
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"File: {p.name} -> memory/{memory_name}/converted/\n")
+    print(f"File: {p.name} -> {out_dir}/\n")
     try:
-        out = convert_one(p, converted_dir)
+        memory_name = p.parent.name if p.parent != Path(".") else p.stem
+        logical_rel = Path(p.name)
+        out = convert_one(
+            p,
+            out_dir,
+            memory_name=memory_name,
+            logical_rel=logical_rel,
+        )
         kb = out.stat().st_size // 1024
         print(f"Done: 1 file converted ({kb} KB)")
     except (Exception, BaseException) as e:
@@ -234,7 +234,7 @@ def _run_memory_mode(
     subfolders: list[str] | None = None,
     memory_name_override: str | None = None,
 ) -> None:
-    """Convert folder to memory/<name>/ preserving structure."""
+    """Convert folder; write markdown alongside each source file (same folder)."""
     p = Path(memory_path)
     if p.is_absolute():
         src_full = p
@@ -250,7 +250,6 @@ def _run_memory_mode(
             return
 
     memory_name = memory_name_override or src_full.name
-    out_root = MEMORY / memory_name
 
     # Build list of (file_path, logical_rel) - walk each subfolder to preserve logical paths through symlinks
     folders_to_walk: list[tuple[Path, Path]] = []
@@ -271,22 +270,19 @@ def _run_memory_mode(
         print(f"No supported files in {src_full}")
         return
 
-    print(f"Memory: {memory_name}  ({len(files)} files) -> {out_root}/\n")
+    print(f"Source: {src_full}  ({len(files)} files) -> same folder\n")
 
     ok, fail = [], []
     for i, (f, logical_rel) in enumerate(files, 1):
-        rel_parent = logical_rel.parent
-        converted_dir = out_root / rel_parent / "converted"
-        chunked_dir = out_root / rel_parent / "chunked"
-        converted_dir.mkdir(parents=True, exist_ok=True)
-        chunked_dir.mkdir(parents=True, exist_ok=True)
+        out_dir = f.parent
+        out_dir.mkdir(parents=True, exist_ok=True)
 
         label = str(logical_rel) if logical_rel != Path(".") else f.name
         print(f"  [{i}/{len(files)}] {label} ... ", end="", flush=True)
         try:
             out = convert_one(
                 f,
-                converted_dir,
+                out_dir,
                 sharepoint_base=sharepoint_base,
                 sharepoint_query=sharepoint_query,
                 memory_name=memory_name,

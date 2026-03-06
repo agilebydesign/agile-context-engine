@@ -14,7 +14,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("CONTENT_MEMORY_ROOT", os.getcwd()))
+from _config import ROOT, ensure_root
+
+ensure_root()
 SCRIPTS = Path(__file__).resolve().parent
 
 
@@ -46,7 +48,7 @@ def main():
         print(f"Pipeline: convert → chunk → sync SharePoint → embed for {src}\n")
         if not _run("convert_to_markdown.py", ["--memory", src]):
             sys.exit(1)
-        if not _run("chunk_markdown.py", ["--memory", memory_name]):
+        if not _run("chunk_markdown.py", ["--path", src]):
             sys.exit(1)
         if not _run("sync_sharepoint_urls.py", ["--memory", memory_name]):
             sys.exit(1)
@@ -58,12 +60,20 @@ def main():
         print("\nDone: indexed.")
         return
 
-    # --memory: chunk → embed (assumes convert already ran or chunks exist)
+    # --memory / --path: chunk → embed (assumes convert already ran or chunks exist)
     mem_idx = next((i for i, a in enumerate(args) if a == "--memory"), None)
-    if mem_idx is not None and mem_idx + 1 < len(args):
-        memory_name = args[mem_idx + 1]
-        print(f"Pipeline: chunk → embed for {memory_name}\n")
-        if not _run("chunk_markdown.py", ["--memory", memory_name]):
+    path_idx = next((i for i, a in enumerate(args) if a == "--path"), None)
+    src = None
+    if path_idx is not None and path_idx + 1 < len(args):
+        src = args[path_idx + 1]
+    elif mem_idx is not None and mem_idx + 1 < len(args):
+        src = args[mem_idx + 1]
+    if src:
+        memory_name = Path(src).name
+        print(f"Pipeline: chunk → sync SharePoint → embed for {src}\n")
+        if not _run("chunk_markdown.py", ["--path", src]):
+            sys.exit(1)
+        if not _run("sync_sharepoint_urls.py", ["--memory", memory_name]):
             sys.exit(1)
         embed_args = ["--memory", memory_name]
         if replace:
@@ -75,7 +85,7 @@ def main():
 
     print("Usage:")
     print("  python index_memory.py --path <source_folder>   # full pipeline")
-    print("  python index_memory.py --memory <memory_name>  # chunk + embed")
+    print("  python index_memory.py --path <source_folder>  # chunk + embed (convert already ran)")
     print("  python index_memory.py --replace                # rebuild entire index")
 
 
