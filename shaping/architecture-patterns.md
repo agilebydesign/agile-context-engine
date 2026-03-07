@@ -22,7 +22,7 @@ Yes — pydantic.  Use pydantic for config, strategy, and DTOs. Typed function s
 Use JSON for structured data only: relationships (e.g. connections between nodes in story-map), traversal slices (order, status), skill config (e.g. templates to render output), scanner associated with a rule, engine state.
 
 **Markdown for Long-form text, qualitative content** 
-Use Markdown for all prose: instructions, guidance, rules, process. Content of each epic and/or story goes in separate `.md` files. Assembled agent output is Markdown.
+Use Markdown for all prose: instructions, guidance, rules, process. Content of each epic and/or story goes in separate `.md` files. Assembled agent output is Markdown. 
 
 ### Path (Cross-cutting)
 
